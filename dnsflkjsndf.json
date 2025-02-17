@@ -1,0 +1,16 @@
+{
+  "inputData": {
+    "url": "https://www.vilvahstore.com/products/natural-under-eyecare-cream",
+    "brandId": "42",
+    "sectionFinder": "Frustration_with_Competitive_Products",
+    "audience": {
+      "demography": "General",
+      "location": "India ",
+      "gender": "Male",
+      "age": "25-45"
+    }
+  },
+  "generatedSections": {
+    "Frustration_with_Competitive_Products": "**Header:** Don't Settle for Less: Common Eye Cream Woes\n\n**Text:** Tired of ineffective eye creams? You're not alone!\n\n**Bullet Points:**\n\n- Ineffective on stubborn dark circles.\n- Temporary relief for puffiness, not long-term.\n- Fails to smooth stubborn fine lines.\n- Lacks ingredients for firming and lifting.\n- Can cause irritation for sensitive skin."
+  }
+}
