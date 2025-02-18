@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { processPrompt } from "@/lib/data/SectionsPrompts";
-import { fetchProduct } from "@/lib/fetchClipToCart";
 
-export function getSkuFromUrl(url: string): string {
+function getSkuFromUrl(url: string): string {
   const { pathname } = new URL(url);
-  console.log(pathname);
   const pathParts = pathname.split("/");
   const nonEmptyParts = pathParts.filter(Boolean);
   const sku = nonEmptyParts[nonEmptyParts.length - 1] || "";
-  console.log(sku);
   return sku;
 }
 
@@ -80,13 +77,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // defining the key for the section prompts map ;
     const sectionKey = inputData.sectionFinder;
     const product_url = inputData.url;
-    // defining the SKU for DB call
     const sku = getSkuFromUrl(product_url);
+    console.log(sku);
 
-    const product_details = await fetchProduct(inputData.brandId, sku);
+    const productResponse = await fetch(
+      new URL(
+        `/api/product_cliptocart?brandId=${inputData.brandId}&sku=${sku}`,
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+      ).toString()
+    );
+
+    if (!productResponse.ok) {
+      throw new Error(
+        `HTTP error! status . error in fetching product response : ${productResponse.status}`
+      );
+    }
+
+    const product_details = await productResponse.json();
+    console.log(product_details);
 
     const generatedSections: Record<string, string> = {};
 
@@ -108,15 +118,25 @@ export async function POST(request: NextRequest) {
 
       const sku_supportedProduct = getSkuFromUrl(product);
 
-      let supportedProduct = await fetchProduct(
-        inputData.brandId,
-        sku_supportedProduct
+      let supportedProduct = await fetch(
+        new URL(
+          `/api/product_cliptocart?brandId=${inputData.brandId}&sku=${sku_supportedProduct}`,
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+        ).toString()
       );
+
+      if (!supportedProduct.ok) {
+        throw new Error(
+          `HTTP error! status . error in fetching product response : ${supportedProduct.status}`
+        );
+      }
+
+      const supportedProductResponse = await supportedProduct.json();
       let productPrompt = `
         Product 2  url : ${product}
 
         here is the Product 2 Details : 
-        ${JSON.stringify(supportedProduct)}
+        ${JSON.stringify(supportedProductResponse)}
         
         `;
       finalPrompt = finalPrompt + productPrompt;
@@ -161,17 +181,11 @@ export async function POST(request: NextRequest) {
                       items: {
                         type: "object",
                         properties: {
-                          text: { type: "string" },
                           badgeLink: { type: "string" },
                           point: { type: "string" },
                           supportingText: { type: "string" },
                         },
-                        required: [
-                          "text",
-                          "badgeLink",
-                          "point",
-                          "supportingText",
-                        ],
+                        required: ["badgeLink", "point", "supportingText"],
                         additionalProperties: false,
                       },
                     },
@@ -240,8 +254,7 @@ export async function POST(request: NextRequest) {
     console.log(parsedResponse);
     return NextResponse.json(
       {
-        inputData,
-        generatedSections,
+        parsedResponse,
       },
       { status: 200 }
     );
