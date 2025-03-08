@@ -228,8 +228,7 @@ export function processPrompt(inputData: Input) {
     Reason_to_Buy: `
     There is a reason given why someone should by the product. Create a section expanding the reason and supporting the reason with details
 
-      Layout:
-        - Generic Layout
+      Layout: [header , bullet points ]
 
       Here are some reasons to buy the product : 
 
@@ -374,14 +373,14 @@ export function processPrompt(inputData: Input) {
 
     // 25) Customers Love
     Customers_Love: `
-     Display 10 reviews or short quotes praising the product.
-     
-      Consider these Audience details while creating the Section : 
+      Display 10 reviews or short quotes praising the product.
+      
+        Consider these Audience details while creating the Section : 
 
-      Location :${JSON.stringify(inputData.audience?.location)}
-      Age : ${JSON.stringify(inputData.audience?.age)}
-      Gender : ${JSON.stringify(inputData.audience?.gender)}
-      Demography : ${JSON.stringify(inputData.audience?.demography)}
+        Location :${JSON.stringify(inputData.audience?.location)}
+        Age : ${JSON.stringify(inputData.audience?.age)}
+        Gender : ${JSON.stringify(inputData.audience?.gender)}
+        Demography : ${JSON.stringify(inputData.audience?.demography)}
       
     `,
 
