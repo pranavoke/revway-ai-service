@@ -1,6 +1,18 @@
 import { Input } from "@/app/api/sectionGenerationAI/route";
 export function processPrompt(inputData: Input) {
   const sectionPrompts: Record<string, string> = {
+    LandingPage_Title: `
+    Create a Landing page title for this product , You only need to give header in less than 7 words . 
+
+    Some Instructions : 
+
+    title should be catchy and related to the input params . 
+
+    Framework : ${JSON.stringify(inputData.framework)}
+
+
+    
+    `,
     Problem_Solution: `
     Create a section listing consumer problems and how the product is solving the problems. This section will be included in a landing page with the objective of product sale.
      

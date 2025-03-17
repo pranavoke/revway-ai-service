@@ -50,7 +50,7 @@ export interface Input {
   sectionFinder: string;
   supportedProducts?: string;
   competativeProducts?: string[];
-
+  framework?: string;
   alternativeSolutions?: string[];
 
   audience?: Audience;
@@ -144,114 +144,166 @@ export async function POST(request: NextRequest) {
 
     const responseText = await callGPTWithPrompt(finalPrompt);
     generatedSections[sectionKey] = responseText;
-
-    const sechema_completion = await openai.chat.completions.create({
-      model: "gpt-4o-2024-08-06",
-      temperature: 0.7,
-      messages: [
-        {
-          role: "user",
-          content: `You are a helpful assistant who returns JSON strictly following the provided schema. if the full information is not provided pass empty in particular fields .You do not need to Add / Modify / Delete content just generate my web page section JSON , ${JSON.stringify(
-            responseText
-          )},
-          
-          Also Remove any * (single stars) , ** (double stars) characters if present in a zero relevance context . 
-          `,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "web_page_sections_array",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              sections: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    sectionType: { type: "string" },
-                    header: { type: "string" },
-                    subHeader: { type: "string" },
-                    text: { type: "string" },
-                    bulletPoints: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          badgeLink: { type: "string" },
-                          point: { type: "string" },
-                          supportingText: { type: "string" },
-                        },
-                        required: ["badgeLink", "point", "supportingText"],
-                        additionalProperties: false,
-                      },
-                    },
-                    mediaCarouselModule: {
+    let parsedResponse;
+    if (inputData.sectionFinder === "LandingPage_Title") {
+      const sechema_completionLandingPage =
+        await openai.chat.completions.create({
+          model: "gpt-4o-2024-08-06",
+          temperature: 0.7,
+          messages: [
+            {
+              role: "user",
+              content: `You are a helpful assistant who returns JSON strictly following the provided schema. if the full information is not provided pass empty in particular fields .You do not need to Add / Modify / Delete content just generate JSON , ${JSON.stringify(
+                responseText
+              )},
+  
+            Strictly follow the instructions . 
+            
+            Also Remove any * (single stars) , ** (double stars) characters if present in a zero relevance context . 
+            `,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "web_page_sections_array",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  sections: {
+                    type: "array",
+                    items: {
                       type: "object",
                       properties: {
-                        text: { type: "string" },
-                        mediaCarousel: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              mediaLink: { type: "string" },
-                              text: { type: "string" },
-                              type: { type: "string" },
-                            },
-                            required: ["mediaLink", "text", "type"],
-                            additionalProperties: false,
-                          },
-                        },
+                        header: { type: "string" },
                       },
-                      required: ["text", "mediaCarousel"],
+                      required: ["header"],
                       additionalProperties: false,
                     },
-                    testimonials: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          badgeLink: { type: "string" },
-                          testimonialText: { type: "string" },
-                          reviewerName: { type: "string" },
-                        },
-                        required: [
-                          "badgeLink",
-                          "testimonialText",
-                          "reviewerName",
-                        ],
-                        additionalProperties: false,
-                      },
-                    },
                   },
-                  required: [
-                    "sectionType",
-                    "header",
-                    "subHeader",
-                    "text",
-                    "bulletPoints",
-                    "mediaCarouselModule",
-                    "testimonials",
-                  ],
-                  additionalProperties: false,
                 },
+                required: ["sections"],
+                additionalProperties: false,
               },
             },
-            required: ["sections"],
-            additionalProperties: false,
+          },
+        });
+
+      const sechema_completionLandingPage_response =
+        sechema_completionLandingPage.choices[0].message?.content || "";
+      parsedResponse = JSON.parse(sechema_completionLandingPage_response);
+    } else {
+      const sechema_completion = await openai.chat.completions.create({
+        model: "gpt-4o-2024-08-06",
+        temperature: 0.7,
+        messages: [
+          {
+            role: "user",
+            content: `You are a helpful assistant who returns JSON strictly following the provided schema. if the full information is not provided pass empty in particular fields .You do not need to Add / Modify / Delete content just generate JSON , ${JSON.stringify(
+              responseText
+            )},
+  
+            Strictly follow the instructions . 
+            
+            Also Remove any * (single stars) , ** (double stars) characters if present in a zero relevance context . 
+            `,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "web_page_sections_array",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                sections: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      sectionType: { type: "string" },
+                      header: { type: "string" },
+                      subHeader: { type: "string" },
+                      text: { type: "string" },
+                      bulletPoints: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            badgeLink: { type: "string" },
+                            point: { type: "string" },
+                            supportingText: { type: "string" },
+                          },
+                          required: ["badgeLink", "point", "supportingText"],
+                          additionalProperties: false,
+                        },
+                      },
+                      mediaCarouselModule: {
+                        type: "object",
+                        properties: {
+                          text: { type: "string" },
+                          mediaCarousel: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                mediaLink: { type: "string" },
+                                text: { type: "string" },
+                                type: { type: "string" },
+                              },
+                              required: ["mediaLink", "text", "type"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["text", "mediaCarousel"],
+                        additionalProperties: false,
+                      },
+                      testimonials: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            badgeLink: { type: "string" },
+                            testimonialText: { type: "string" },
+                            reviewerName: { type: "string" },
+                          },
+                          required: [
+                            "badgeLink",
+                            "testimonialText",
+                            "reviewerName",
+                          ],
+                          additionalProperties: false,
+                        },
+                      },
+                    },
+                    required: [
+                      "sectionType",
+                      "header",
+                      "subHeader",
+                      "text",
+                      "bulletPoints",
+                      "mediaCarouselModule",
+                      "testimonials",
+                    ],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["sections"],
+              additionalProperties: false,
+            },
           },
         },
-      },
-    });
+      });
 
-    const schema_response =
-      sechema_completion.choices[0].message?.content || "";
-    let parsedResponse = JSON.parse(schema_response);
-    console.log(parsedResponse);
+      const schema_response =
+        sechema_completion.choices[0].message?.content || "";
+      parsedResponse = JSON.parse(schema_response);
+      console.log(parsedResponse);
+    }
     return NextResponse.json(
       {
         parsedResponse,
