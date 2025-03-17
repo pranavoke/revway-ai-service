@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
         sechema_completionLandingPage.choices[0].message?.content || "";
       parsedResponse = JSON.parse(sechema_completionLandingPage_response);
     } else {
-      const sechema_completion = await openai.chat.completions.create({
+      const schema_completion = await openai.chat.completions.create({
         model: "gpt-4o-2024-08-06",
         temperature: 0.7,
         messages: [
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
             content: `You are a helpful assistant who returns JSON strictly following the provided schema. if the full information is not provided pass empty in particular fields .You do not need to Add / Modify / Delete content just generate JSON , ${JSON.stringify(
               responseText
             )},
-  
+      
             Strictly follow the instructions . 
             
             Also Remove any * (single stars) , ** (double stars) characters if present in a zero relevance context . 
@@ -278,6 +278,34 @@ export async function POST(request: NextRequest) {
                           additionalProperties: false,
                         },
                       },
+                      tableModule: {
+                        type: "object",
+                        properties: {
+                          rows: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                cells: {
+                                  type: "array",
+                                  items: {
+                                    type: "object",
+                                    properties: {
+                                      content: { type: "string" },
+                                    },
+                                    required: ["content"],
+                                    additionalProperties: false,
+                                  },
+                                },
+                              },
+                              required: ["cells"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["rows"],
+                        additionalProperties: false,
+                      },
                     },
                     required: [
                       "sectionType",
@@ -287,6 +315,7 @@ export async function POST(request: NextRequest) {
                       "bulletPoints",
                       "mediaCarouselModule",
                       "testimonials",
+                      "tableModule",
                     ],
                     additionalProperties: false,
                   },
@@ -298,9 +327,8 @@ export async function POST(request: NextRequest) {
           },
         },
       });
-
       const schema_response =
-        sechema_completion.choices[0].message?.content || "";
+        schema_completion.choices[0].message?.content || "";
       parsedResponse = JSON.parse(schema_response);
       console.log(parsedResponse);
     }
