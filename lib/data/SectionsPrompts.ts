@@ -238,7 +238,7 @@ export function processPrompt(inputData: Input) {
     Reason_to_Buy: `
     There is a reason given why someone should by the product. Create a section expanding the reason and supporting the reason with details
 
-      Layout: [header , bullet points ]
+      Layout: [header , bullet points (with no supporting text) ]
 
       Here are some reasons to buy the product : 
 
