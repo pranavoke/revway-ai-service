@@ -5,16 +5,6 @@ import { dynamicLandingPagePrompt, moduleCreationPrompt } from "@/lib/prompts";
 import { Module } from "@/lib/types";
 import OpenAI from "openai";
 
-// Add timeout wrapper for OpenAI calls
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
-    ),
-  ]);
-};
-
 /**
  * Segment content into appropriate modules based on content type
  *
@@ -484,162 +474,7 @@ function enhanceContentSegregation(
   return enhancedModules;
 }
 
-/**
- * Process a single section with timeout and error handling
- */
-async function processSectionWithTimeout(
-  section: any,
-  openai: OpenAI,
-  timeoutMs: number = 30000
-): Promise<{ sectionTitle: string; modules: any[] }> {
-  const sectionTitle = section.title;
-
-  if (!sectionTitle) {
-    console.warn("Skipping section with missing title:", section);
-    throw new Error("Section missing title");
-  }
-
-  // Handle different description formats
-  let description = section.description;
-  if (Array.isArray(description)) {
-    description = description.join("\n\n");
-  } else if (typeof description !== "string") {
-    description = JSON.stringify(description);
-  }
-
-  const moduleSystemPrompt = `You are an expert landing page content formatter. Your task is to convert section content into well-structured modules.
-
-Use these module types:
-
-TEXT Modules:
-- HEADER: Main section title
-- SUB_HEADER: Secondary title
-- PARAGRAPH: Standard paragraph text
-- CTA: Call to Action buttons or links
-
-LIST Modules:
-- BULLET_POINTS: Simple bullet point list
-- BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
-
-TESTIMONIAL Modules:
-- TESTIMONIAL: Customer quotes with author
-
-MEDIA Modules:
-- IMAGE: Image content
-- VIDEO: Video content
-
-TABLE Modules:
-- TABLE_1: Table with multiple columns
-
-IMPORTANT: Properly separate different content types within the section. If a section contains a paragraph followed by bullet points and then another paragraph, create THREE separate modules (PARAGRAPH, BULLET_POINTS, PARAGRAPH) rather than combining them into one module.
-
-Look for natural content breaks in the text and create separate modules for each distinct content type. Properly separate text, lists, testimonials, media, and tables.`;
-
-  const moduleUserPrompt = `Section Title: ${sectionTitle}
-Section Description:
-
-${description}
-
-Create separate modules for different content types (paragraphs, lists, testimonials, media, tables). 
-DO NOT combine different content types into a single module.
-
-These are important :
-
-For bullet points with titles and explanations, use the BULLET_POINTS_WITH_SUPPORTING_TEXT type.
-where ever normal only points are given use simple bullet points 
-If there are images or videos mentioned, include appropriate MEDIA modules.
-If there are structured data that would fit in a table, use TABLE modules.
-
-Return a JSON array of module objects that clearly segregate the content.
-
-Example of good segregation:
-[
-  { "type": "TEXT", "subtype": "HEADER", "content": "Why Choose Us" },
-  { "type": "TEXT", "subtype": "PARAGRAPH", "content": "We offer the best products because:" },
-  { "type": "LIST", "subtype": "BULLET_POINTS", "content": ["High quality", "Affordable", "Eco-friendly"] },
-  { "type": "LIST", "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT", "content": [
-    { "title": "Quality", "supportingText": "Made from premium materials" },
-    { "title": "Durability", "supportingText": "Lasts for years of use" }
-  ]},
-  { "type": "MEDIA", "subtype": "IMAGE", "content": { "src": "https://example.com/image.jpg", "alt": "Product Image" } },
-  { "type": "TEXT", "subtype": "PARAGRAPH", "content": "Contact us today to learn more." }
-]`;
-
-  try {
-    const moduleCompletion = await withTimeout(
-      openai.chat.completions.create({
-        model: "gpt-4o",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: moduleSystemPrompt },
-          { role: "user", content: moduleUserPrompt },
-        ],
-      }),
-      timeoutMs
-    );
-
-    const moduleResponse = moduleCompletion.choices[0].message.content || "[]";
-    console.log(`\n ------------------------------------------------\n`);
-    console.log("Module:", moduleResponse);
-    let modules;
-
-    try {
-      const parsedResponse = JSON.parse(moduleResponse);
-
-      // Check if response is already an array
-      if (Array.isArray(parsedResponse)) {
-        modules = parsedResponse;
-      } else if (
-        parsedResponse.modules &&
-        Array.isArray(parsedResponse.modules)
-      ) {
-        modules = parsedResponse.modules;
-      } else {
-        // Look for any array property in the response
-        const arrayProps = Object.keys(parsedResponse).filter((key) =>
-          Array.isArray(parsedResponse[key])
-        );
-
-        if (arrayProps.length > 0) {
-          modules = parsedResponse[arrayProps[0]];
-        } else {
-          // Fallback to automatic content segmentation
-          console.warn(
-            `No array found in response for section "${sectionTitle}". Using automatic segmentation.`
-          );
-          modules = segmentContent(sectionTitle, description);
-        }
-      }
-    } catch (parseError) {
-      console.error(
-        `Error parsing module response for section "${sectionTitle}":`,
-        parseError
-      );
-      // Fallback to automatic content segmentation
-      modules = segmentContent(sectionTitle, description);
-    }
-
-    // Apply additional content segregation if needed
-    const enhancedModules = enhanceContentSegregation(modules, description);
-
-    return { sectionTitle, modules: enhancedModules };
-  } catch (error) {
-    console.error(
-      `Error processing modules for section "${sectionTitle}":`,
-      error
-    );
-    // Fallback to automatic content segmentation
-    const fallbackModules = segmentContent(sectionTitle, description);
-    return { sectionTitle, modules: fallbackModules };
-  }
-}
-
 export async function POST(request: NextRequest) {
-  // Add overall request timeout
-  const requestTimeout = setTimeout(() => {
-    console.error("Request timeout after 8 minutes");
-  }, 8 * 60 * 1000); // 8 minute max
-
   try {
     const body = await request.json();
 
@@ -671,17 +506,14 @@ export async function POST(request: NextRequest) {
         ]
       }`;
 
-    const landingPageCompletion = await withTimeout(
-      openai.chat.completions.create({
-        model: "gpt-4o",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-      60000 // 60 second timeout for initial call
-    );
+    const landingPageCompletion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
 
     // Parse and validate the response
     let landingPageData;
@@ -731,17 +563,157 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    console.log(
-      `Processing ${landingPageData.sections.length} sections in parallel...`
-    );
+    // Step 2: Process each section into appropriate modules
+    const modulesBySection: Record<string, any[]> = {};
 
-    // Step 2: Process each section into appropriate modules IN PARALLEL (MAJOR PERFORMANCE IMPROVEMENT)
-    const sectionPromises = landingPageData.sections.map(
-      (section: any) => processSectionWithTimeout(section, openai, 100000) // 100 second timeout per section
-    );
+    for (const section of landingPageData.sections) {
+      // Ensure the section has a title
+      if (!section.title) {
+        console.warn("Skipping section with missing title:", section);
+        continue;
+      }
 
-    // Wait for all sections to complete in parallel instead of sequentially
-    const sectionResults = await Promise.allSettled(sectionPromises);
+      // Handle different description formats
+      let description = section.description;
+      if (Array.isArray(description)) {
+        // If description is an array, convert it to a string with double line breaks
+        // to ensure proper paragraph separation
+        description = description.join("\n\n");
+      } else if (typeof description !== "string") {
+        // If description is neither a string nor an array, convert to string
+        description = JSON.stringify(description);
+      }
+
+      const moduleSystemPrompt = `You are an expert landing page content formatter. Your task is to convert section content into well-structured modules.
+
+Use these module types:
+
+TEXT Modules:
+- HEADER: Main section title
+- SUB_HEADER: Secondary title
+- PARAGRAPH: Standard paragraph text
+- CTA: Call to Action buttons or links
+
+LIST Modules:
+- BULLET_POINTS: Simple bullet point list
+- BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
+
+TESTIMONIAL Modules:
+- TESTIMONIAL: Customer quotes with author
+
+MEDIA Modules:
+- IMAGE: Image content
+- VIDEO: Video content
+
+TABLE Modules:
+- TABLE_1: Table with multiple columns
+
+IMPORTANT: Properly separate different content types within the section. If a section contains a paragraph followed by bullet points and then another paragraph, create THREE separate modules (PARAGRAPH, BULLET_POINTS, PARAGRAPH) rather than combining them into one module.
+
+Look for natural content breaks in the text and create separate modules for each distinct content type. Properly separate text, lists, testimonials, media, and tables.`;
+
+      const moduleUserPrompt = `Section Title: ${section.title}
+        Section Description:
+        
+        ${description}
+        
+        Create separate modules for different content types (paragraphs, lists, testimonials, media, tables). 
+        DO NOT combine different content types into a single module.
+
+        These are important :
+        
+        For bullet points with titles and explanations, use the BULLET_POINTS_WITH_SUPPORTING_TEXT type.
+        where ever normal only points are given use simple bullet points 
+        If there are images or videos mentioned, include appropriate MEDIA modules.
+        If there are structured data that would fit in a table, use TABLE modules.
+        
+        Return a JSON array of module objects that clearly segregate the content.
+        
+        Example of good segregation:
+        [
+          { "type": "TEXT", "subtype": "HEADER", "content": "Why Choose Us" },
+          { "type": "TEXT", "subtype": "PARAGRAPH", "content": "We offer the best products because:" },
+          { "type": "LIST", "subtype": "BULLET_POINTS", "content": ["High quality", "Affordable", "Eco-friendly"] },
+          { "type": "LIST", "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT", "content": [
+            { "title": "Quality", "supportingText": "Made from premium materials" },
+            { "title": "Durability", "supportingText": "Lasts for years of use" }
+          ]},
+          { "type": "MEDIA", "subtype": "IMAGE", "content": { "src": "https://example.com/image.jpg", "alt": "Product Image" } },
+          { "type": "TEXT", "subtype": "PARAGRAPH", "content": "Contact us today to learn more." }
+        ]`;
+
+      try {
+        const moduleCompletion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: moduleSystemPrompt },
+            { role: "user", content: moduleUserPrompt },
+          ],
+        });
+
+        const moduleResponse =
+          moduleCompletion.choices[0].message.content || "[]";
+        console.log(`\n ------------------------------------------------\n`);
+        console.log("Module:", moduleResponse);
+        let modules;
+
+        try {
+          const parsedResponse = JSON.parse(moduleResponse);
+
+          // Check if response is already an array
+          if (Array.isArray(parsedResponse)) {
+            modules = parsedResponse;
+          } else if (
+            parsedResponse.modules &&
+            Array.isArray(parsedResponse.modules)
+          ) {
+            modules = parsedResponse.modules;
+          } else {
+            // Look for any array property in the response
+            const arrayProps = Object.keys(parsedResponse).filter((key) =>
+              Array.isArray(parsedResponse[key])
+            );
+
+            if (arrayProps.length > 0) {
+              modules = parsedResponse[arrayProps[0]];
+            } else {
+              // Fallback to automatic content segmentation
+              console.warn(
+                `No array found in response for section "${section.title}". Using automatic segmentation.`
+              );
+              modules = segmentContent(section.title, description);
+            }
+          }
+        } catch (parseError) {
+          console.error(
+            `Error parsing module response for section "${section.title}":`,
+            parseError
+          );
+          // Fallback to automatic content segmentation
+          modules = segmentContent(section.title, description);
+        }
+
+        // Apply additional content segregation if needed
+        modulesBySection[section.title] = enhanceContentSegregation(
+          modules,
+          description
+        );
+      } catch (error) {
+        console.error(
+          `Error processing modules for section "${section.title}":`,
+          error
+        );
+        // Fallback to automatic content segmentation
+        modulesBySection[section.title] = segmentContent(
+          section.title,
+          description
+        );
+      }
+    }
+
+    // Step 3: Create a flat array of all modules
+    const allModules = Object.values(modulesBySection).flat();
 
     // Step 3: Transform modulesBySection to the required array format
     const transformedModulesBySection: Array<{
@@ -751,42 +723,32 @@ export async function POST(request: NextRequest) {
       modules: any[];
     }> = [];
 
-    for (const result of sectionResults) {
-      if (result.status === "fulfilled") {
-        const { sectionTitle, modules } = result.value;
+    for (const [sectionTitle, modules] of Object.entries(modulesBySection)) {
+      // Count total modules
+      const totalModules = modules.length;
 
-        // Count total modules
-        const totalModules = modules.length;
+      // Count modules by type
+      const moduleCounts: Record<string, number> = {};
+      modules.forEach((module) => {
+        const type = module.type;
+        moduleCounts[type] = (moduleCounts[type] || 0) + 1;
+      });
 
-        // Count modules by type
-        const moduleCounts: Record<string, number> = {};
-        modules.forEach((module: any) => {
-          const type = module.type;
-          moduleCounts[type] = (moduleCounts[type] || 0) + 1;
-        });
-
-        // Create the transformed structure and push to array
-        transformedModulesBySection.push({
-          sectionTitle,
-          totalModules,
-          moduleCounts,
-          modules,
-        });
-      } else {
-        console.error("Failed to process section:", result.reason);
-        // Could add fallback processing here if needed
-      }
+      // Create the transformed structure and push to array
+      transformedModulesBySection.push({
+        sectionTitle,
+        totalModules,
+        moduleCounts,
+        modules,
+      });
     }
-
-    clearTimeout(requestTimeout);
 
     // Return the complete result with the transformed array structure
     return NextResponse.json({
       title: landingPageData.title,
-      sections: transformedModulesBySection,
+      modulesBySection: transformedModulesBySection,
     });
   } catch (error) {
-    clearTimeout(requestTimeout);
     console.error("Error creating landing page:", error);
 
     return NextResponse.json(

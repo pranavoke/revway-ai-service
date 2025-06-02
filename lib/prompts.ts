@@ -18,6 +18,12 @@ There are no fixed section templates or predefined types. Instead, examine the U
 - Unique selling propositions
 - Most important conversion actions
 
+
+Everytime creating a section you need to give some mandotary sections : 
+
+- Intro Section : 
+
+
 Then, create a landing page structure with the exact sections needed to effectively market this specific offering.
 
 For each section, provide:
@@ -40,7 +46,7 @@ Focus on these module types:
    - HEADER: Section main title
    - SUB_HEADER: Secondary titles
    - PARAGRAPH: Text paragraphs
-   - CTA: Call to action buttons
+  
 
 2. LIST modules:
    - BULLET_POINTS: Simple bullet lists
@@ -78,13 +84,22 @@ Original content:
 - Quality: We use only the finest materials
 - Durability: Built to last for years
 - Sustainability: Environmentally friendly production
+ What we learned ? 
+  Better Quality 
+  Beter Durability 
+  Better sustainability
 Contact us today to learn more about our commitment to excellence."
 
 WRONG way to structure (combined into one module):
 [{
   "type": "TEXT",
   "subtype": "PARAGRAPH",
-  "content": "Our product is designed with three core values in mind:\\n- Quality: We use only the finest materials\\n- Durability: Built to last for years\\n- Sustainability: Environmentally friendly production\\nContact us today to learn more about our commitment to excellence."
+  "content": "Our product is designed with three core values in mind:\\n- Quality: We use only the finest materials\\n- Durability: Built to last for years\\n- Sustainability: Environmentally friendly production\\nWhat we learned  ? 
+  Better Quality 
+  Beter Durability 
+  Better sustainability Contact us today to learn more about our commitment to excellence.
+
+  "
 }]
 
 CORRECT way to structure (properly segregated):
@@ -94,13 +109,45 @@ CORRECT way to structure (properly segregated):
   "content": "Our product is designed with three core values in mind:"
 }, {
   "type": "LIST",
+  "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
+  "content": [
+  {point:"Quality",
+  supporting_text:"We use only the finest materials"},
+   {point:"Durability",
+  supporting_text:"Built to last for years"},
+   {point:"Sustainability",
+  supporting_text:"Environmentally friendly production"},
+  
+  ]
+},
+ {
+  "type": "LIST",
+  "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
+  "content": [
+  {point:"Quality",
+  supporting_text:"We use only the finest materials"},
+   {point:"Durability",
+  supporting_text:"Built to last for years"},
+   {point:"Sustainability",
+  supporting_text:"Environmentally friendly production"},
+  
+  ]
+},
+{
+  "type": "TEXT",
+  "subtype": "SUB_HEADER",
+  "content": " What we learned ?"
+},
+ {
+  "type": "LIST",
   "subtype": "BULLET_POINTS",
   "content": [
-    "Quality: We use only the finest materials",
-    "Durability: Built to last for years",
-    "Sustainability: Environmentally friendly production"
+  " Better Quality",
+  "Beter Durability  ",
+   "Better sustainability "
   ]
-}, {
+},
+{
   "type": "TEXT",
   "subtype": "PARAGRAPH",
   "content": "Contact us today to learn more about our commitment to excellence."
