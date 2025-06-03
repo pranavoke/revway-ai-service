@@ -1,8 +1,7 @@
 // app/api/create-landing-page/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { generateLandingPage, formatSectionToModules } from "@/lib/openai";
-import { dynamicLandingPagePrompt, moduleCreationPrompt } from "@/lib/prompts";
-import { Module } from "@/lib/types";
+import { dynamicLandingPagePrompt } from "@/lib/prompts";
+
 import OpenAI from "openai";
 
 // Add timeout wrapper for OpenAI calls
@@ -15,473 +14,84 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
   ]);
 };
 
-/**
- * Segment content into appropriate modules based on content type
- *
- * @param title Section title
- * @param content Content to segment
- * @returns Array of segmented modules
- */
-function segmentContent(title: string, content: string): any[] {
-  const modules: any[] = [
+function createFallbackModules(title: string, content: string): any[] {
+  console.log(`🚨 Creating fallback modules for section: "${title}"`);
+
+  return [
     {
       type: "TEXT",
       subtype: "HEADER",
       content: title,
     },
-  ];
-
-  // Split content by double newlines to identify paragraphs
-  const paragraphs = content.split(/\n\s*\n/).filter((p) => p.trim() !== "");
-
-  for (const paragraph of paragraphs) {
-    const trimmedParagraph = paragraph.trim();
-
-    // Skip empty paragraphs
-    if (trimmedParagraph === "") continue;
-
-    // Check if paragraph contains bullet points
-    if (
-      trimmedParagraph.includes("\n") &&
-      (trimmedParagraph.includes("- ") ||
-        trimmedParagraph.includes("* ") ||
-        trimmedParagraph.includes("• "))
-    ) {
-      const lines = trimmedParagraph.split("\n");
-      let textContent: string[] = [];
-      let bulletPoints: string[] = [];
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine === "") continue;
-
-        if (trimmedLine.match(/^[-*•]\s+/)) {
-          bulletPoints.push(trimmedLine.replace(/^[-*•]\s+/, "").trim());
-        } else {
-          textContent.push(trimmedLine);
-        }
-      }
-
-      // Add paragraph text if it exists
-      if (textContent.length > 0) {
-        modules.push({
-          type: "TEXT",
-          subtype: "PARAGRAPH",
-          content: textContent.join("\n").trim(),
-        });
-      }
-
-      // Add bullet points if they exist
-      if (bulletPoints.length > 0) {
-        // Check if these are bullet points with supporting text
-        const bulletPointsWithSupport: Array<{
-          title: string;
-          supportingText: string;
-        }> = [];
-        let isWithSupport = true;
-
-        for (const point of bulletPoints) {
-          const match = point.match(/^([^:]+):\s*(.*?)$/);
-          if (match) {
-            bulletPointsWithSupport.push({
-              title: match[1].trim(),
-              supportingText: match[2].trim(),
-            });
-          } else {
-            isWithSupport = false;
-            break;
-          }
-        }
-
-        if (isWithSupport && bulletPointsWithSupport.length > 0) {
-          modules.push({
-            type: "LIST",
-            subtype: "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-            content: bulletPointsWithSupport,
-          });
-        } else {
-          modules.push({
-            type: "LIST",
-            subtype: "BULLET_POINTS",
-            content: bulletPoints,
-          });
-        }
-      }
-    }
-    // Check if paragraph contains bullet points with supporting text structure
-    else if (
-      trimmedParagraph.includes("\n") &&
-      trimmedParagraph.match(/^([^:]+):\s*(.*?)$/m)
-    ) {
-      // This looks like bullet points with title and supporting text
-      const lines = trimmedParagraph.split("\n");
-      let isBulletWithSupport = true;
-      const bulletPointsWithSupport: Array<{
-        title: string;
-        supportingText: string;
-      }> = [];
-
-      // Process each line
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine === "") continue;
-
-        // Check for "Title: Supporting text" pattern
-        const match = trimmedLine.match(/^([^:]+):\s*(.*?)$/);
-        if (match) {
-          bulletPointsWithSupport.push({
-            title: match[1].trim(),
-            supportingText: match[2].trim(),
-          });
-        } else {
-          // If any line doesn't match the pattern, this might not be bullet points with support
-          isBulletWithSupport = false;
-          break;
-        }
-      }
-
-      if (isBulletWithSupport && bulletPointsWithSupport.length > 0) {
-        modules.push({
-          type: "LIST",
-          subtype: "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-          content: bulletPointsWithSupport,
-        });
-      } else {
-        // Fallback to regular paragraph
-        modules.push({
-          type: "TEXT",
-          subtype: "PARAGRAPH",
-          content: trimmedParagraph,
-        });
-      }
-    }
-    // Check if it's a testimonial (contains quotation marks and attribution)
-    else if (
-      trimmedParagraph.includes('"') &&
-      (trimmedParagraph.includes("- ") ||
-        trimmedParagraph.includes("— ") ||
-        trimmedParagraph.includes("\n"))
-    ) {
-      const quoteMatch = trimmedParagraph.match(/"([^"]+)"/);
-      const authorMatch = trimmedParagraph.match(/[-—]\s*([^,\n]+)/);
-
-      if (quoteMatch) {
-        modules.push({
-          type: "TESTIMONIAL",
-          subtype: "TESTIMONIAL",
-          content: {
-            quote: quoteMatch[1],
-            author: authorMatch ? authorMatch[1].trim() : "Happy Customer",
-          },
-        });
-      } else {
-        // Fallback to paragraph
-        modules.push({
-          type: "TEXT",
-          subtype: "PARAGRAPH",
-          content: trimmedParagraph,
-        });
-      }
-    }
-    // Check for media references
-    else if (
-      trimmedParagraph.toLowerCase().includes("image") ||
-      trimmedParagraph.toLowerCase().includes("photo") ||
-      trimmedParagraph.toLowerCase().includes("picture") ||
-      trimmedParagraph.toLowerCase().includes("video")
-    ) {
-      // Add the text paragraph
-      modules.push({
-        type: "TEXT",
-        subtype: "PARAGRAPH",
-        content: trimmedParagraph,
-      });
-
-      // Also suggest a media module
-      if (trimmedParagraph.toLowerCase().includes("video")) {
-        modules.push({
-          type: "MEDIA",
-          subtype: "VIDEO",
-          content: {
-            src: "https://example.com/videos/product-video.mp4",
-            thumbnail: "https://example.com/images/video-thumbnail.jpg",
-            title: "Product Demo Video",
-          },
-        });
-      } else {
-        modules.push({
-          type: "MEDIA",
-          subtype: "IMAGE",
-          content: {
-            src: "https://example.com/images/product-image.jpg",
-            alt: "Product Image",
-          },
-        });
-      }
-    }
-    // Check for table-like content
-    else if (
-      trimmedParagraph.includes("|") ||
-      (trimmedParagraph.includes("\n") &&
-        trimmedParagraph.split("\n").length >= 3 &&
-        trimmedParagraph.split("\n").every((line) => line.includes("\t")))
-    ) {
-      // This looks like tabular data, try to convert to table
-      let headers: string[] = [];
-      let rows: string[][] = [];
-
-      if (trimmedParagraph.includes("|")) {
-        // Parse pipe-separated table
-        const lines = trimmedParagraph.split("\n");
-        headers = lines[0]
-          .split("|")
-          .map((h) => h.trim())
-          .filter((h) => h !== "");
-
-        for (let i = 1; i < lines.length; i++) {
-          if (lines[i].trim() === "" || lines[i].includes("---")) continue;
-          const row = lines[i]
-            .split("|")
-            .map((cell) => cell.trim())
-            .filter((cell) => cell !== "");
-          if (row.length > 0) rows.push(row);
-        }
-      } else {
-        // Parse tab-separated table
-        const lines = trimmedParagraph.split("\n");
-        headers = lines[0].split("\t").map((h) => h.trim());
-
-        for (let i = 1; i < lines.length; i++) {
-          if (lines[i].trim() === "") continue;
-          rows.push(lines[i].split("\t").map((cell) => cell.trim()));
-        }
-      }
-
-      if (headers.length > 0 && rows.length > 0) {
-        modules.push({
-          type: "TABLE",
-          subtype: headers.length >= 3 ? "TABLE_1" : "TABLE_2",
-          content: {
-            headers,
-            rows,
-          },
-        });
-      } else {
-        // Fallback to regular paragraph
-        modules.push({
-          type: "TEXT",
-          subtype: "PARAGRAPH",
-          content: trimmedParagraph,
-        });
-      }
-    }
-    // Regular paragraph
-    else {
-      modules.push({
-        type: "TEXT",
-        subtype: "PARAGRAPH",
-        content: trimmedParagraph,
-      });
-    }
-  }
-
-  // Check if we should add a CTA
-  if (
-    title.toLowerCase().includes("order") ||
-    title.toLowerCase().includes("buy") ||
-    title.toLowerCase().includes("get") ||
-    title.toLowerCase().includes("shop") ||
-    title.toLowerCase().includes("today") ||
-    title.toLowerCase().includes("offer") ||
-    content.toLowerCase().includes("click") ||
-    content.toLowerCase().includes("order now") ||
-    content.toLowerCase().includes("buy now")
-  ) {
-    modules.push({
+    {
       type: "TEXT",
-      subtype: "CTA",
-      content: {
-        text: "Shop Now",
-        url: "/shop",
-      },
-    });
-  }
-
-  return modules;
+      subtype: "PARAGRAPH",
+      content: content || "Content will be added here.",
+    },
+  ];
 }
 
 /**
- * Enhance content segregation by splitting mixed content modules
- *
- * @param modules The modules to enhance
- * @param originalContent The original content for reference
- * @returns Enhanced modules with better content segregation
+ * Normalize GPT response to ensure consistent format
  */
-function enhanceContentSegregation(
-  modules: any[],
-  originalContent: string
+function normalizeGPTResponse(
+  response: any,
+  sectionTitle: string,
+  sectionData: any
 ): any[] {
-  const enhancedModules: any[] = [];
+  console.log(`🔧 Normalizing response for section: "${sectionTitle}"`);
+  console.log(`📊 Raw response type: ${typeof response}`);
+  console.log(`🔍 Raw response:`, response);
 
-  for (const module of modules) {
-    // Skip header and CTA modules - no need for additional processing
-    if (
-      (module.type === "TEXT" &&
-        (module.subtype === "HEADER" ||
-          module.subtype === "SUB_HEADER" ||
-          module.subtype === "CTA" ||
-          module.subtype === "SHOP_NOW")) ||
-      module.type === "TESTIMONIAL" ||
-      module.type === "MEDIA" ||
-      module.type === "TABLE"
-    ) {
-      enhancedModules.push(module);
-      continue;
-    }
-
-    // Focus on paragraph modules that might contain mixed content
-    if (module.type === "TEXT" && module.subtype === "PARAGRAPH") {
-      const content = module.content;
-
-      // Skip if content is very short or not a string
-      if (typeof content !== "string" || content.length < 30) {
-        enhancedModules.push(module);
-        continue;
-      }
-
-      // Check for mixed content (paragraphs and bullet points)
-      if (
-        content.includes("\n") &&
-        (content.includes("- ") ||
-          content.includes("* ") ||
-          content.includes("• "))
-      ) {
-        const lines = content.split("\n");
-        let currentParagraph: string[] = [];
-        let currentBulletPoints: string[] = [];
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-
-          // Skip empty lines
-          if (trimmedLine === "") continue;
-
-          // Check if line is a bullet point
-          if (trimmedLine.match(/^[-*•]\s+/)) {
-            // If we have paragraph content, add it as a module
-            if (currentParagraph.length > 0) {
-              enhancedModules.push({
-                type: "TEXT",
-                subtype: "PARAGRAPH",
-                content: currentParagraph.join("\n").trim(),
-              });
-              currentParagraph = [];
-            }
-
-            // Add the bullet point
-            currentBulletPoints.push(
-              trimmedLine.replace(/^[-*•]\s+/, "").trim()
-            );
-          } else {
-            // If we have bullet points, add them as a module
-            if (currentBulletPoints.length > 0) {
-              // Check if bullet points have a title: support pattern
-              const bulletPointsWithSupport: Array<{
-                title: string;
-                supportingText: string;
-              }> = [];
-              let isWithSupport = true;
-
-              for (const point of currentBulletPoints) {
-                const match = point.match(/^([^:]+):\s*(.*?)$/);
-                if (match) {
-                  bulletPointsWithSupport.push({
-                    title: match[1].trim(),
-                    supportingText: match[2].trim(),
-                  });
-                } else {
-                  isWithSupport = false;
-                  break;
-                }
-              }
-
-              if (isWithSupport && bulletPointsWithSupport.length > 0) {
-                enhancedModules.push({
-                  type: "LIST",
-                  subtype: "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-                  content: bulletPointsWithSupport,
-                });
-              } else {
-                enhancedModules.push({
-                  type: "LIST",
-                  subtype: "BULLET_POINTS",
-                  content: currentBulletPoints,
-                });
-              }
-
-              currentBulletPoints = [];
-            }
-
-            // Add the paragraph line
-            currentParagraph.push(trimmedLine);
-          }
-        }
-
-        // Add any remaining content
-        if (currentParagraph.length > 0) {
-          enhancedModules.push({
-            type: "TEXT",
-            subtype: "PARAGRAPH",
-            content: currentParagraph.join("\n").trim(),
-          });
-        }
-
-        if (currentBulletPoints.length > 0) {
-          // Check if these are bullet points with supporting text
-          const bulletPointsWithSupport: Array<{
-            title: string;
-            supportingText: string;
-          }> = [];
-          let isWithSupport = true;
-
-          for (const point of currentBulletPoints) {
-            const match = point.match(/^([^:]+):\s*(.*?)$/);
-            if (match) {
-              bulletPointsWithSupport.push({
-                title: match[1].trim(),
-                supportingText: match[2].trim(),
-              });
-            } else {
-              isWithSupport = false;
-              break;
-            }
-          }
-
-          if (isWithSupport && bulletPointsWithSupport.length > 0) {
-            enhancedModules.push({
-              type: "LIST",
-              subtype: "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-              content: bulletPointsWithSupport,
-            });
-          } else {
-            enhancedModules.push({
-              type: "LIST",
-              subtype: "BULLET_POINTS",
-              content: currentBulletPoints,
-            });
-          }
-        }
-      } else {
-        // No mixed content, add the module as is
-        enhancedModules.push(module);
-      }
-    } else {
-      // For non-paragraph modules, add them as is
-      enhancedModules.push(module);
-    }
+  // If response already has modules array, use it
+  if (response && Array.isArray(response.modules)) {
+    console.log(`✅ Found modules array with ${response.modules.length} items`);
+    return response.modules;
   }
 
-  return enhancedModules;
+  // If response is directly an array
+  if (Array.isArray(response)) {
+    console.log(`✅ Response is direct array with ${response.length} items`);
+    return response;
+  }
+
+  // If response is a single module object, wrap it in array
+  if (response && response.type) {
+    console.log(`🔄 Converting single module to array`);
+    const modules = [response];
+
+    // Add content module if we have description and it's not already included
+    if (
+      sectionData.description &&
+      typeof sectionData.description === "string"
+    ) {
+      modules.push({
+        type: "TEXT",
+        subtype: "PARAGRAPH",
+        content: sectionData.description,
+      });
+    } else if (Array.isArray(sectionData.description)) {
+      // Handle array descriptions (bullet points)
+      modules.push({
+        type: "LIST",
+        subtype: "BULLET_POINTS",
+        content: sectionData.description,
+      });
+    }
+
+    return modules;
+  }
+
+  // Fallback - create modules from section data
+  console.log(`🚨 Using fallback module creation`);
+  return createFallbackModules(
+    sectionTitle,
+    typeof sectionData.description === "string"
+      ? sectionData.description
+      : Array.isArray(sectionData.description)
+      ? sectionData.description.join(". ")
+      : "Content will be added here."
+  );
 }
 
 /**
@@ -490,22 +100,12 @@ function enhanceContentSegregation(
 async function processSectionWithTimeout(
   section: any,
   openai: OpenAI,
-  timeoutMs: number = 30000
+  timeoutMs: number = 60000
 ): Promise<{ sectionTitle: string; modules: any[] }> {
   const sectionTitle = section.title;
 
-  if (!sectionTitle) {
-    console.warn("Skipping section with missing title:", section);
-    throw new Error("Section missing title");
-  }
-
-  // Handle different description formats
-  let description = section.description;
-  if (Array.isArray(description)) {
-    description = description.join("\n\n");
-  } else if (typeof description !== "string") {
-    description = JSON.stringify(description);
-  }
+  console.log(`\n🔄 Processing section: "${sectionTitle}"`);
+  console.log(`📋 Section data:`, section);
 
   const moduleSystemPrompt = `You are an expert landing page content formatter. Your task is to convert section content into well-structured modules.
 
@@ -515,7 +115,6 @@ TEXT Modules:
 - HEADER: Main section title
 - SUB_HEADER: Secondary title
 - PARAGRAPH: Standard paragraph text
-- CTA: Call to Action buttons or links
 
 LIST Modules:
 - BULLET_POINTS: Simple bullet point list
@@ -531,39 +130,56 @@ MEDIA Modules:
 TABLE Modules:
 - TABLE_1: Table with multiple columns
 
-IMPORTANT: Properly separate different content types within the section. If a section contains a paragraph followed by bullet points and then another paragraph, create THREE separate modules (PARAGRAPH, BULLET_POINTS, PARAGRAPH) rather than combining them into one module.
+CRITICAL INSTRUCTIONS:
+1. Always return a JSON object with a "modules" array
+2. Create separate modules for different content types
+3. Include BOTH the header AND the content from the description
+4. If description is a string, create a PARAGRAPH module
+5. If description is an array, create appropriate LIST modules
+6. For testimonials, extract individual quotes into separate TESTIMONIAL modules
 
-Look for natural content breaks in the text and create separate modules for each distinct content type. Properly separate text, lists, testimonials, media, and tables.`;
+Response format must be: {"modules": [...]}`;
 
   const moduleUserPrompt = `Section Title: ${sectionTitle}
-Section Description:
+Section Content: ${JSON.stringify(section)}
 
-${description}
+Convert this section into appropriate modules. You MUST:
+1. Create a HEADER module for the title
+2. Create appropriate content modules for the description
+3. Return the response in this exact format: {"modules": [...]}
 
-Create separate modules for different content types (paragraphs, lists, testimonials, media, tables). 
-DO NOT combine different content types into a single module.
+Examples based on content type:
 
-These are important :
+For string description:
+{"modules": [
+  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
+  {"type": "TEXT", "subtype": "PARAGRAPH", "content": "description content here"}
+]}
 
-For bullet points with titles and explanations, use the BULLET_POINTS_WITH_SUPPORTING_TEXT type.
-where ever normal only points are given use simple bullet points 
-If there are images or videos mentioned, include appropriate MEDIA modules.
-If there are structured data that would fit in a table, use TABLE modules.
+For array description (bullet points):
+{"modules": [
+  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
+  {"type": "LIST", "subtype": "BULLET_POINTS", "content": ["item1", "item2", "item3"]}
+]}
 
-Return a JSON array of module objects that clearly segregate the content.
+For array description (bullet points):
+{"modules": [
+  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
+  {"type": "LIST", "subtype": "BULLET_POINTS", 
+  "content": [ {point : "quality" , supporting_text:"high quality product is it"}, {point : "", supporting_text:""} ]}
+]}
 
-Example of good segregation:
-[
-  { "type": "TEXT", "subtype": "HEADER", "content": "Why Choose Us" },
-  { "type": "TEXT", "subtype": "PARAGRAPH", "content": "We offer the best products because:" },
-  { "type": "LIST", "subtype": "BULLET_POINTS", "content": ["High quality", "Affordable", "Eco-friendly"] },
-  { "type": "LIST", "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT", "content": [
-    { "title": "Quality", "supportingText": "Made from premium materials" },
-    { "title": "Durability", "supportingText": "Lasts for years of use" }
-  ]},
-  { "type": "MEDIA", "subtype": "IMAGE", "content": { "src": "https://example.com/image.jpg", "alt": "Product Image" } },
-  { "type": "TEXT", "subtype": "PARAGRAPH", "content": "Contact us today to learn more." }
-]`;
+
+
+For testimonials (extract individual quotes):
+{"modules": [
+  {"type": "TEXT", "subtype": "HEADER", "content": "Testimonials"},
+  {"type": "TEXT", "subtype": "PARAGRAPH", "content": "intro text"},
+  {"type": "TESTIMONIAL", "content": {"quote": "quote1", "author": ""}},
+  {"type": "TESTIMONIAL", "content": {"quote": "quote2", "author": ""}}
+]}`;
+
+  console.log(`\n📤 SENDING MODULE PROMPT FOR SECTION: "${sectionTitle}"`);
 
   try {
     const moduleCompletion = await withTimeout(
@@ -574,77 +190,68 @@ Example of good segregation:
           { role: "system", content: moduleSystemPrompt },
           { role: "user", content: moduleUserPrompt },
         ],
+        temperature: 0.3, // Lower temperature for more consistent responses
       }),
       timeoutMs
     );
 
-    const moduleResponse = moduleCompletion.choices[0].message.content || "[]";
-    console.log(`\n ------------------------------------------------\n`);
-    console.log("Module:", moduleResponse);
-    let modules;
+    const moduleResponse = moduleCompletion.choices[0].message.content || "{}";
 
-    try {
-      const parsedResponse = JSON.parse(moduleResponse);
+    console.log(`\n📥 GPT RESPONSE FOR SECTION: "${sectionTitle}"`);
+    console.log(`📊 Response length: ${moduleResponse.length} characters`);
 
-      // Check if response is already an array
-      if (Array.isArray(parsedResponse)) {
-        modules = parsedResponse;
-      } else if (
-        parsedResponse.modules &&
-        Array.isArray(parsedResponse.modules)
-      ) {
-        modules = parsedResponse.modules;
-      } else {
-        // Look for any array property in the response
-        const arrayProps = Object.keys(parsedResponse).filter((key) =>
-          Array.isArray(parsedResponse[key])
-        );
+    const parsedResponse = JSON.parse(moduleResponse);
+    console.log(`🔍 Parsed Response:`, parsedResponse);
 
-        if (arrayProps.length > 0) {
-          modules = parsedResponse[arrayProps[0]];
-        } else {
-          // Fallback to automatic content segmentation
-          console.warn(
-            `No array found in response for section "${sectionTitle}". Using automatic segmentation.`
-          );
-          modules = segmentContent(sectionTitle, description);
-        }
-      }
-    } catch (parseError) {
-      console.error(
-        `Error parsing module response for section "${sectionTitle}":`,
-        parseError
-      );
-      // Fallback to automatic content segmentation
-      modules = segmentContent(sectionTitle, description);
-    }
-
-    // Apply additional content segregation if needed
-    const enhancedModules = enhanceContentSegregation(modules, description);
-
-    return { sectionTitle, modules: enhancedModules };
-  } catch (error) {
-    console.error(
-      `Error processing modules for section "${sectionTitle}":`,
-      error
+    // Normalize the response to ensure consistent format
+    const normalizedModules = normalizeGPTResponse(
+      parsedResponse,
+      sectionTitle,
+      section
     );
-    // Fallback to automatic content segmentation
-    const fallbackModules = segmentContent(sectionTitle, description);
+
+    console.log(
+      `✅ Successfully processed section "${sectionTitle}" with ${normalizedModules.length} modules`
+    );
+
+    return { sectionTitle, modules: normalizedModules };
+  } catch (error) {
+    console.error(`❌ Error processing section "${sectionTitle}":`, error);
+
+    // Return fallback modules instead of empty array
+    const fallbackModules = createFallbackModules(
+      sectionTitle,
+      typeof section.description === "string"
+        ? section.description
+        : Array.isArray(section.description)
+        ? section.description.join(". ")
+        : "Content will be added here."
+    );
+
     return { sectionTitle, modules: fallbackModules };
   }
 }
 
 export async function POST(request: NextRequest) {
+  console.log(`\n🚀 ========== LANDING PAGE GENERATION STARTED ==========`);
+  console.log(`⏰ Request started at: ${new Date().toISOString()}`);
+
   // Add overall request timeout
   const requestTimeout = setTimeout(() => {
     console.error("Request timeout after 8 minutes");
-  }, 8 * 60 * 1000); // 8 minute max
+  }, 8 * 60 * 1000);
 
   try {
     const body = await request.json();
+    console.log(`📥 Request body:`, body);
 
     if (!body.url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    }
+
+    console.log(`🔗 Processing URL: ${body.url}`);
+    if (body.prompt) {
+      console.log(`💡 Additional instructions: ${body.prompt}`);
     }
 
     // Initialize OpenAI with custom prompts
@@ -666,10 +273,14 @@ export async function POST(request: NextRequest) {
         "sections": [
           {
             "title": "Section Title",
-            "description": "Detailed section content"
+            "description": "Detailed section content or array of bullet points"
           }
         ]
       }`;
+
+    console.log(`\n📤 SENDING INITIAL LANDING PAGE PROMPT`);
+
+    console.log(`⏱️ Starting initial GPT call with 60s timeout...`);
 
     const landingPageCompletion = await withTimeout(
       openai.chat.completions.create({
@@ -679,18 +290,23 @@ export async function POST(request: NextRequest) {
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        temperature: 0.5,
       }),
-      60000 // 60 second timeout for initial call
+      60000
     );
+
+    const initialResponse =
+      landingPageCompletion.choices[0].message.content || "{}";
+
+    console.log(`\n📥 INITIAL GPT RESPONSE`);
+    console.log(`📊 Response length: ${initialResponse.length} characters`);
 
     // Parse and validate the response
     let landingPageData;
     try {
-      landingPageData = JSON.parse(
-        landingPageCompletion.choices[0].message.content || "{}"
-      );
-      console.log(`\n ------------------------------------------------\n`);
-      console.log("LandingPage:", landingPageData);
+      landingPageData = JSON.parse(initialResponse);
+      console.log(`✅ Successfully parsed initial JSON response`);
+      console.log(`📋 Landing page title: "${landingPageData.title}"`);
 
       // Validate that sections exists and is an array
       if (
@@ -699,8 +315,7 @@ export async function POST(request: NextRequest) {
         landingPageData.sections.length === 0
       ) {
         console.error(
-          "Invalid response format: sections is missing or not an array",
-          landingPageData
+          `❌ Invalid response format: sections missing or not array`
         );
 
         // Create a default structure if sections is missing
@@ -714,9 +329,23 @@ export async function POST(request: NextRequest) {
             },
           ],
         };
+        console.log(`🚨 Using fallback structure with 1 section`);
+      } else {
+        console.log(`✅ Found ${landingPageData.sections.length} sections:`);
+        landingPageData.sections.forEach((section: any, index: number) => {
+          console.log(
+            `   ${index + 1}. "${section.title}" (${
+              typeof section.description === "string"
+                ? section.description.length + " chars"
+                : Array.isArray(section.description)
+                ? section.description.length + " items"
+                : "unknown type"
+            })`
+          );
+        });
       }
     } catch (error) {
-      console.error("Error parsing OpenAI response:", error);
+      console.error(`❌ Error parsing initial GPT response:`, error);
 
       // Create a default structure if parsing fails
       landingPageData = {
@@ -729,21 +358,44 @@ export async function POST(request: NextRequest) {
           },
         ],
       };
+      console.log(`🚨 Using fallback structure due to parse error`);
     }
 
+    console.log(`\n🔄 ========== PROCESSING SECTIONS IN PARALLEL ==========`);
     console.log(
-      `Processing ${landingPageData.sections.length} sections in parallel...`
+      `📊 Total sections to process: ${landingPageData.sections.length}`
     );
 
-    // Step 2: Process each section into appropriate modules IN PARALLEL (MAJOR PERFORMANCE IMPROVEMENT)
+    // Step 2: Process each section into appropriate modules IN PARALLEL
     const sectionPromises = landingPageData.sections.map(
-      (section: any) => processSectionWithTimeout(section, openai, 100000) // 100 second timeout per section
+      (section: any, index: number) => {
+        console.log(
+          `🔄 Creating promise for section ${index + 1}: "${section.title}"`
+        );
+        return processSectionWithTimeout(section, openai, 90000); // Increased timeout
+      }
     );
 
-    // Wait for all sections to complete in parallel instead of sequentially
+    console.log(
+      `⏱️ Starting parallel processing of ${sectionPromises.length} sections...`
+    );
+
+    // Wait for all sections to complete in parallel
     const sectionResults = await Promise.allSettled(sectionPromises);
 
-    // Step 3: Transform modulesBySection to the required array format
+    console.log(`\n📊 ========== PARALLEL PROCESSING COMPLETED ==========`);
+    console.log(
+      `✅ Completed: ${
+        sectionResults.filter((r) => r.status === "fulfilled").length
+      }`
+    );
+    console.log(
+      `❌ Failed: ${
+        sectionResults.filter((r) => r.status === "rejected").length
+      }`
+    );
+
+    // Step 3: Transform results to required format
     const transformedModulesBySection: Array<{
       sectionTitle: string;
       totalModules: number;
@@ -751,43 +403,119 @@ export async function POST(request: NextRequest) {
       modules: any[];
     }> = [];
 
-    for (const result of sectionResults) {
+    for (const [index, result] of sectionResults.entries()) {
       if (result.status === "fulfilled") {
         const { sectionTitle, modules } = result.value;
 
+        console.log(
+          `✅ Processing successful result ${
+            index + 1
+          }: "${sectionTitle}" with ${modules.length} modules`
+        );
+
+        // Ensure modules is an array before processing
+        const moduleArray = Array.isArray(modules) ? modules : [];
+
+        if (moduleArray.length === 0) {
+          console.log(
+            `⚠️ No modules found for section "${sectionTitle}", creating fallback`
+          );
+          const fallbackModules = createFallbackModules(
+            sectionTitle,
+            landingPageData.sections[index]?.description ||
+              "Content will be added here."
+          );
+          moduleArray.push(...fallbackModules);
+        }
+
         // Count total modules
-        const totalModules = modules.length;
+        const totalModules = moduleArray.length;
 
         // Count modules by type
         const moduleCounts: Record<string, number> = {};
-        modules.forEach((module: any) => {
-          const type = module.type;
-          moduleCounts[type] = (moduleCounts[type] || 0) + 1;
+        moduleArray.forEach((module: any) => {
+          if (module && module.type) {
+            const type = module.type;
+            moduleCounts[type] = (moduleCounts[type] || 0) + 1;
+          }
         });
+
+        console.log(`📊 Module counts for "${sectionTitle}":`, moduleCounts);
 
         // Create the transformed structure and push to array
         transformedModulesBySection.push({
           sectionTitle,
           totalModules,
           moduleCounts,
-          modules,
+          modules: moduleArray,
         });
       } else {
-        console.error("Failed to process section:", result.reason);
-        // Could add fallback processing here if needed
+        console.error(
+          `❌ Failed to process section ${index + 1}:`,
+          result.reason
+        );
+
+        // Create fallback for failed sections
+        const originalSection = landingPageData.sections[index];
+        if (originalSection) {
+          const fallbackModules = createFallbackModules(
+            originalSection.title,
+            typeof originalSection.description === "string"
+              ? originalSection.description
+              : Array.isArray(originalSection.description)
+              ? originalSection.description.join(". ")
+              : "Content will be added here."
+          );
+
+          transformedModulesBySection.push({
+            sectionTitle: originalSection.title,
+            totalModules: fallbackModules.length,
+            moduleCounts: { TEXT: fallbackModules.length },
+            modules: fallbackModules,
+          });
+        }
       }
     }
 
     clearTimeout(requestTimeout);
 
-    // Return the complete result with the transformed array structure
+    console.log(`\n🎉 ========== GENERATION COMPLETED SUCCESSFULLY ==========`);
+    console.log(`📊 Final Results Summary:`);
+    console.log(`   📋 Landing Page Title: "${landingPageData.title}"`);
+    console.log(
+      `   📦 Total Sections Processed: ${transformedModulesBySection.length}`
+    );
+
+    let totalModules = 0;
+    const overallModuleCounts: Record<string, number> = {};
+
+    transformedModulesBySection.forEach((section, index) => {
+      console.log(
+        `   ${index + 1}. "${section.sectionTitle}": ${
+          section.totalModules
+        } modules`
+      );
+      totalModules += section.totalModules;
+      Object.keys(section.moduleCounts).forEach((type) => {
+        overallModuleCounts[type] =
+          (overallModuleCounts[type] || 0) + section.moduleCounts[type];
+      });
+    });
+
+    console.log(`   🎯 Total Modules Created: ${totalModules}`);
+    console.log(`   📈 Module Type Distribution:`, overallModuleCounts);
+    console.log(`⏰ Request completed at: ${new Date().toISOString()}`);
+
+    // Return the complete result
     return NextResponse.json({
       title: landingPageData.title,
-      sections: transformedModulesBySection,
+      modulesBySection: transformedModulesBySection,
     });
   } catch (error) {
     clearTimeout(requestTimeout);
-    console.error("Error creating landing page:", error);
+    console.error(`💥 ========== FATAL ERROR ==========`);
+    console.error(`❌ Error creating landing page:`, error);
+    console.error(`⏰ Error occurred at: ${new Date().toISOString()}`);
 
     return NextResponse.json(
       { error: "Failed to create landing page" },
