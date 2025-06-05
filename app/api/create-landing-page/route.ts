@@ -109,26 +109,39 @@ async function processSectionWithTimeout(
 
   const moduleSystemPrompt = `You are an expert landing page content formatter. Your task is to convert section content into well-structured modules.
 
-Use these module types:
+Focus on these module types:
 
-TEXT Modules:
-- HEADER: Main section title
-- SUB_HEADER: Secondary title
-- PARAGRAPH: Standard paragraph text
+1. TEXT modules:
+   - HEADER: Section main title
+   - SUB_HEADER: Secondary titles
+   - PARAGRAPH: Text paragraphs
+   - PAIR_IT_WITH: Product recommendation (content: null, products: array)
+   - GRID: Product collection (content: null, products: array)
 
-LIST Modules:
-- BULLET_POINTS: Simple bullet point list
-- BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
+2. LIST modules (use 'bulletPoints' field):
+   - BULLET_POINTS: Simple bullet lists
+   - BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
 
-TESTIMONIAL Modules:
-- TESTIMONIAL: Customer quotes with author
+3. TESTIMONIAL modules (use 'testimonials' field):
+   - TESTIMONIAL: All customer quotes in one module
 
-MEDIA Modules:
-- IMAGE: Image content
-- VIDEO: Video content
+4. MEDIA modules (use 'mediaList' field):
+   - IMAGE: Image content
+   - VIDEO: Video content
 
-TABLE Modules:
-- TABLE_1: Table with multiple columns
+5. TABLE modules (use 'table' field):
+   - TABLE_1: Three-column table
+   - TABLE_2: Two-column table
+
+   CRITICAL FIELD MAPPINGS:
+- TEXT type → uses 'content' field 
+- LIST type → uses 'bulletPoints' field
+- TESTIMONIAL type → uses 'testimonials' field
+- MEDIA type → uses 'mediaList' field
+- TABLE type → uses 'table' field
+
+Never use 'content' field for non-TEXT types.
+
 
 CRITICAL INSTRUCTIONS:
 1. Always return a JSON object with a "modules" array
@@ -148,36 +161,46 @@ Convert this section into appropriate modules. You MUST:
 2. Create appropriate content modules for the description
 3. Return the response in this exact format: {"modules": [...]}
 
-Examples based on content type:
-
-For string description:
-{"modules": [
-  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
-  {"type": "TEXT", "subtype": "PARAGRAPH", "content": "description content here"}
-]}
-
-For array description (bullet points):
-{"modules": [
-  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
-  {"type": "LIST", "subtype": "BULLET_POINTS", "content": ["item1", "item2", "item3"]}
-]}
-
-For array description (bullet points):
-{"modules": [
-  {"type": "TEXT", "subtype": "HEADER", "content": "${sectionTitle}"},
-  {"type": "LIST", "subtype": "BULLET_POINTS", 
-  "content": [ {point : "quality" , supporting_text:"high quality product is it"}, {point : "", supporting_text:""} ]}
-]}
-
-
-
-For testimonials (extract individual quotes):
-{"modules": [
-  {"type": "TEXT", "subtype": "HEADER", "content": "Testimonials"},
-  {"type": "TEXT", "subtype": "PARAGRAPH", "content": "intro text"},
-  {"type": "TESTIMONIAL", "content": {"quote": "quote1", "author": ""}},
-  {"type": "TESTIMONIAL", "content": {"quote": "quote2", "author": ""}}
-]}`;
+CORRECT way to structure (properly segregated):
+[{
+  "type": "TEXT",
+  "subtype": "PARAGRAPH",
+  "content": "Our product is designed with three core values in mind:"
+}, {
+  "type": "LIST",
+  "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
+  "bulletPoints": [
+    {"point": "Quality", "supportingText": "We use only the finest materials"},
+    {"point": "Durability", "supportingText": "Built to last for years"},
+    {"point": "Sustainability", "supportingText": "Environmentally friendly production"}
+  ]
+}, {
+  "type": "TEXT",
+  "subtype": "SUB_HEADER",
+  "content": "What we learned?"
+}, {
+  "type": "LIST",
+  "subtype": "BULLET_POINTS",
+  "bulletPoints": [
+    {"point": "Better Quality", "supportingText": null  (provide this to maintain stable schema)} ,
+    {"point": "Better Durability", "supportingText": null  (provide this to maintain stable schema)} ,
+    {"point": "Better sustainability", "supportingText": null  (provide this to maintain stable schema)} 
+  ]
+}, {
+  "type": "TEXT",
+  "subtype": "PARAGRAPH",
+  "content": "Contact us today to learn more about our commitment to excellence."
+}]
+TESTIMONIAL modules should combine ALL testimonials in a section into ONE module:
+{
+  "type": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL",
+  "testimonials": [
+    {"quote": "First testimonial", "author": "Customer 1 "},
+    {"quote": "Second testimonial", "author": "Customer 2"}
+  ]
+}  
+`;
 
   console.log(`\n📤 SENDING MODULE PROMPT FOR SECTION: "${sectionTitle}"`);
 

@@ -9,7 +9,8 @@ Your task is to:
 
 1. Determine the optimal number of sections needed for an effective landing page
 2. Create compelling, conversion-focused content for each section
-3. Ensure the overall flow tells a cohesive story and guides visitors toward the desired action
+3. Ensure the overall flow tells a cohesive story and guides visitors toward the desired action . 
+4. We only need sections which are about the product and important , here we don't need sections like footer , customer support etc . 
 
 There are no fixed section templates or predefined types. Instead, examine the URL to determine:
 - The main purpose of the website
@@ -17,12 +18,6 @@ There are no fixed section templates or predefined types. Instead, examine the U
 - Key pain points and solutions
 - Unique selling propositions
 - Most important conversion actions
-
-
-Everytime creating a section you need to give some mandotary sections : 
-
-- Intro Section : 
-
 
 Then, create a landing page structure with the exact sections needed to effectively market this specific offering.
 
