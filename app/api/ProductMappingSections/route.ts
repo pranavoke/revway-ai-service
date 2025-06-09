@@ -37,6 +37,7 @@ interface PairItWithSection {
   header: string;
   text: string;
   product: {
+    id: number;
     title: string;
     productUrl: string;
     imageUrl: string;
@@ -47,6 +48,7 @@ interface PairItWithSection {
 interface CollectionSection {
   header: string;
   products: Array<{
+    id: number;
     title: string;
     description: string;
     productUrl: string;
@@ -59,6 +61,7 @@ interface CollectionSection {
 interface ApiResponse {
   success: boolean;
   mainProduct: {
+    id: number;
     title: string;
     description: string;
     productUrl: string;
@@ -470,6 +473,7 @@ export async function POST(request: NextRequest) {
           sections.pair_it_with = {
             ...pairData,
             product: {
+              id: pairProduct.id,
               title: pairProduct.title,
               productUrl: pairProduct.productUrl,
               imageUrl: pairProduct.imageUrl,
@@ -483,6 +487,7 @@ export async function POST(request: NextRequest) {
           header: `Perfect with ${pairProduct.title}`,
           text: `Enhance your experience by combining ${mainProduct.title} with ${pairProduct.title} for maximum benefits.`,
           product: {
+            id: pairProduct.id,
             title: pairProduct.title,
             productUrl: pairProduct.productUrl,
             imageUrl: pairProduct.imageUrl,
@@ -496,6 +501,7 @@ export async function POST(request: NextRequest) {
     sections.collection = {
       header: "You Might Also Like",
       products: collectionProducts.map((product) => ({
+        id: product.id,
         title: product.title,
         description: stripHtmlTags(product.description),
         productUrl: product.productUrl,
@@ -509,6 +515,7 @@ export async function POST(request: NextRequest) {
     const response: ApiResponse = {
       success: true,
       mainProduct: {
+        id: mainProduct.id,
         title: mainProduct.title,
         description: stripHtmlTags(mainProduct.description),
         productUrl: mainProduct.productUrl,

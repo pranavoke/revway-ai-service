@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 interface GenerateProductSectionsResponse {
   success: boolean;
   mainProduct: {
+    id: number;
     title: string;
     description: string;
     productUrl: string;
@@ -18,6 +19,7 @@ interface GenerateProductSectionsResponse {
     collection: {
       header: string;
       products: Array<{
+        id: number;
         title: string;
         description: string;
         productUrl: string;
@@ -30,6 +32,7 @@ interface GenerateProductSectionsResponse {
       header: string;
       text: string;
       product: {
+        id: number;
         title: string;
         productUrl: string;
         imageUrl: string;
@@ -249,6 +252,7 @@ function convertProductSectionsToModules(
         content: null,
         products: [
           {
+            id: productSections.sections.pair_it_with.product.id,
             title: productSections.sections.pair_it_with.product.title,
             productUrl:
               productSections.sections.pair_it_with.product.productUrl,
@@ -282,6 +286,7 @@ function convertProductSectionsToModules(
       subtype: "GRID",
       content: null,
       products: productSections.sections.collection.products.map((product) => ({
+        id: product.id,
         title: product.title,
         description: product.description,
         productUrl: product.productUrl,
