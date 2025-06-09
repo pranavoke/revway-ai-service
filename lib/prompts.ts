@@ -42,30 +42,44 @@ Focus on these module types:
    - SUB_HEADER: Secondary titles
    - PARAGRAPH: Text paragraphs
   
-
 2. LIST modules:
    - BULLET_POINTS: Simple bullet lists
    - BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
 
 3. TESTIMONIAL modules:
-   - TESTIMONIAL: Customer quotes
+   - TESTIMONIAL_1: Customer reviews (use 'testimonials' field, see below for structure)
 
 4. MEDIA modules:
-   - IMAGE: Image content
+
+   - IMAGE_CAROUSEL:Image content
    - VIDEO: Video content
 
 5. TABLE modules:
-   - TABLE_1: Three-column table
-   - TABLE_2: Two-column table
+   - TABLE_1: Two-column table
+   - TABLE_2: Three-column table
 
 IMPORTANT RULES:
 1. NEVER combine different content types in a single module
 2. If content has a paragraph followed by bullet points, create TWO separate modules
 3. Look for natural breaks in the content and create logical separations
 4. If bullet points have a "Title: Supporting text" structure, use BULLET_POINTS_WITH_SUPPORTING_TEXT
-5. If media is mentioned, create appropriate MEDIA modules
-6. If structured data is present, use TABLE modules
+5. If media is mentioned, create appropriate MEDIA modules (use IMAGE_CAROUSEL for  images)
+6. If structured data is present, use TABLE modules (TABLE_1 for 2 columns, TABLE_2 for 3 columns)
 7. Each module should represent ONE type of content only
+8. For testimonials, use the following structure:
+
+{
+  "type": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL_1",
+  "testimonials": [
+    {
+      "subject": "Short summary or headline",
+      "body": "Full testimonial text",
+      "reviewerName": "Customer name",
+      "rating": 5
+    }
+  ]
+}
 
 The most important principle: Properly segregate different content types into separate modules.
 `;
@@ -89,7 +103,7 @@ WRONG way to structure (combined into one module):
 [{
   "type": "TEXT",
   "subtype": "PARAGRAPH",
-  "content": "Our product is designed with three core values in mind:\\n- Quality: We use only the finest materials\\n- Durability: Built to last for years\\n- Sustainability: Environmentally friendly production\\nWhat we learned  ? 
+  "content": "Our product is designed with three core values in mind:\n- Quality: We use only the finest materials\n- Durability: Built to last for years\n- Sustainability: Environmentally friendly production\nWhat we learned  ? 
   Better Quality 
   Beter Durability 
   Better sustainability Contact us today to learn more about our commitment to excellence.
@@ -106,12 +120,12 @@ CORRECT way to structure (properly segregated):
   "type": "LIST",
   "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
   "content": [
-  {point:"Quality",
-  supporting_text:"We use only the finest materials"},
-   {point:"Durability",
-  supporting_text:"Built to last for years"},
-   {point:"Sustainability",
-  supporting_text:"Environmentally friendly production"},
+  {"point":"Quality",
+  "supporting_text":"We use only the finest materials"},
+   {"point":"Durability",
+  "supporting_text":"Built to last for years"},
+   {"point":"Sustainability",
+  "supporting_text":"Environmentally friendly production"},
   
   ]
 },
@@ -119,12 +133,12 @@ CORRECT way to structure (properly segregated):
   "type": "LIST",
   "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
   "content": [
-  {point:"Quality",
-  supporting_text:"We use only the finest materials"},
-   {point:"Durability",
-  supporting_text:"Built to last for years"},
-   {point:"Sustainability",
-  supporting_text:"Environmentally friendly production"},
+  {"point":"Quality",
+  "supporting_text":"We use only the finest materials"},
+   {"point":"Durability",
+  "supporting_text":"Built to last for years"},
+   {"point":"Sustainability",
+  "supporting_text":"Environmentally friendly production"},
   
   ]
 },
@@ -146,5 +160,29 @@ CORRECT way to structure (properly segregated):
   "type": "TEXT",
   "subtype": "PARAGRAPH",
   "content": "Contact us today to learn more about our commitment to excellence."
-}]
+},
+{
+  "type": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL_1",
+  "testimonials": [
+    {
+      "subject": "Great product!",
+      "body": "I loved using this product, it really helped me a lot.",
+      "reviewerName": "Jane Doe",
+      "rating": 5
+    }
+  ]
+},
+
+{
+  "type": "TABLE",
+  "subtype": "TABLE_1",
+  "table": [["Feature", "Value"], ["Color", "Red"]]
+},
+{
+  "type": "TABLE",
+  "subtype": "TABLE_2",
+  "table": [["Feature", "Value", "Notes"], ["Color", "Red", "Popular"]]
+}
+]
 `;

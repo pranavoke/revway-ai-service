@@ -43,23 +43,63 @@ function normalizeGPTResponse(
   console.log(`📊 Raw response type: ${typeof response}`);
   console.log(`🔍 Raw response:`, response);
 
+  // Helper to normalize testimonial objects
+  function normalizeTestimonial(testimonial: any) {
+    return {
+      subject: testimonial.subject || testimonial.quote || "",
+      body: testimonial.body || testimonial.text || testimonial.quote || "",
+      reviewerName: testimonial.reviewerName || testimonial.author || "",
+      rating:
+        typeof testimonial.rating === "number"
+          ? testimonial.rating
+          : testimonial.rating
+          ? Number(testimonial.rating)
+          : 5,
+    };
+  }
+
+  // Helper to normalize a module
+  function normalizeModule(module: any): any {
+    if (module.type === "TESTIMONIAL") {
+      module.type = "TESTIMONIAL";
+      module.subtype = "TESTIMONIAL_1";
+      if (Array.isArray(module.testimonials)) {
+        module.testimonials = module.testimonials.map(normalizeTestimonial);
+      }
+    }
+    if (module.type === "TABLE") {
+      if (Array.isArray(module.table) && module.table.length > 0) {
+        const colCount = Array.isArray(module.table[0])
+          ? module.table[0].length
+          : 0;
+        if (colCount === 2) module.subtype = "TABLE_1";
+        if (colCount === 3) module.subtype = "TABLE_2";
+      }
+    }
+    if (module.type === "MEDIA") {
+      if (Array.isArray(module.mediaList) && module.mediaList.length > 0) {
+        module.subtype = "IMAGE_CAROUSEL";
+      }
+      if (module.subtype === "VIDEO") {
+        module.subtype = "VIDEO";
+      }
+    }
+    return module;
+  }
+
   // If response already has modules array, use it
   if (response && Array.isArray(response.modules)) {
-    console.log(`✅ Found modules array with ${response.modules.length} items`);
-    return response.modules;
+    return response.modules.map(normalizeModule);
   }
 
   // If response is directly an array
   if (Array.isArray(response)) {
-    console.log(`✅ Response is direct array with ${response.length} items`);
-    return response;
+    return response.map(normalizeModule);
   }
 
   // If response is a single module object, wrap it in array
   if (response && response.type) {
-    console.log(`🔄 Converting single module to array`);
-    const modules = [response];
-
+    const modules = [normalizeModule(response)];
     // Add content module if we have description and it's not already included
     if (
       sectionData.description &&
@@ -78,12 +118,10 @@ function normalizeGPTResponse(
         content: sectionData.description,
       });
     }
-
     return modules;
   }
 
   // Fallback - create modules from section data
-  console.log(`🚨 Using fallback module creation`);
   return createFallbackModules(
     sectionTitle,
     typeof sectionData.description === "string"
@@ -123,25 +161,39 @@ Focus on these module types:
    - BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
 
 3. TESTIMONIAL modules (use 'testimonials' field):
-   - TESTIMONIAL: All customer quotes in one module
+   - TESTIMONIAL_1: All customer reviews in one module. Each testimonial must have: subject, body, reviewerName, rating.
 
 4. MEDIA modules (use 'mediaList' field):
-   - IMAGE: Image content
+   - IMAGE: Single image content
+   - IMAGE_CAROUSEL: Multiple images (use if more than one image)
    - VIDEO: Video content
 
 5. TABLE modules (use 'table' field):
-   - TABLE_1: Three-column table
-   - TABLE_2: Two-column table
+   - TABLE_1: Two-column table
+   - TABLE_2: Three-column table
 
    CRITICAL FIELD MAPPINGS:
 - TEXT type → uses 'content' field 
 - LIST type → uses 'bulletPoints' field
-- TESTIMONIAL type → uses 'testimonials' field
+- TESTIMONIAL type → uses 'testimonials' field (see structure below)
 - MEDIA type → uses 'mediaList' field
 - TABLE type → uses 'table' field
 
 Never use 'content' field for non-TEXT types.
 
+TESTIMONIAL structure example:
+{
+  "type": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL_1",
+  "testimonials": [
+    {
+      "subject": "Short summary or headline",
+      "body": "Full testimonial text",
+      "reviewerName": "Customer name",
+      "rating": 5
+    }
+  ]
+}
 
 CRITICAL INSTRUCTIONS:
 1. Always return a JSON object with a "modules" array
@@ -149,7 +201,9 @@ CRITICAL INSTRUCTIONS:
 3. Include BOTH the header AND the content from the description
 4. If description is a string, create a PARAGRAPH module
 5. If description is an array, create appropriate LIST modules
-6. For testimonials, extract individual quotes into separate TESTIMONIAL modules
+6. For testimonials, extract individual reviews into a single TESTIMONIAL_1 module with the above structure
+7. For tables, use TABLE_1 for 2 columns, TABLE_2 for 3 columns (check the number of columns in the data)
+8. For media, use IMAGE_CAROUSEL if more than one image, otherwise IMAGE. For video, use VIDEO.
 
 Response format must be: {"modules": [...]}`;
 
@@ -182,25 +236,36 @@ CORRECT way to structure (properly segregated):
   "type": "LIST",
   "subtype": "BULLET_POINTS",
   "bulletPoints": [
-    {"point": "Better Quality", "supportingText": null  (provide this to maintain stable schema)} ,
-    {"point": "Better Durability", "supportingText": null  (provide this to maintain stable schema)} ,
-    {"point": "Better sustainability", "supportingText": null  (provide this to maintain stable schema)} 
+    {"point": "Better Quality", "supportingText": null},
+    {"point": "Better Durability", "supportingText": null},
+    {"point": "Better sustainability", "supportingText": null}
   ]
 }, {
   "type": "TEXT",
   "subtype": "PARAGRAPH",
   "content": "Contact us today to learn more about our commitment to excellence."
-}]
-TESTIMONIAL modules should combine ALL testimonials in a section into ONE module:
-{
+}, {
   "type": "TESTIMONIAL",
-  "subtype": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL_1",
   "testimonials": [
-    {"quote": "First testimonial", "author": "Customer 1 "},
-    {"quote": "Second testimonial", "author": "Customer 2"}
+    {"subject": "Great product!", "body": "I loved using this product, it really helped me a lot.", "reviewerName": "Jane Doe", "rating": 5}
   ]
-}  
-`;
+}, {
+  "type": "MEDIA",
+  "subtype": "IMAGE_CAROUSEL",
+  "mediaList": [
+    {"url": "image1.jpg"},
+    {"url": "image2.jpg"}
+  ]
+}, {
+  "type": "TABLE",
+  "subtype": "TABLE_1",
+  "table": [["Feature", "Value"], ["Color", "Red"]]
+}, {
+  "type": "TABLE",
+  "subtype": "TABLE_2",
+  "table": [["Feature", "Value", "Notes"], ["Color", "Red", "Popular"]]
+}]`;
 
   console.log(`\n📤 SENDING MODULE PROMPT FOR SECTION: "${sectionTitle}"`);
 
