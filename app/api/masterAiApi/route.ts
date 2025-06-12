@@ -1,4 +1,6 @@
+// app/api/masterAiApi/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { getMasterLandingPagePrompt } from "@/lib/prompts/index";
 
 interface GenerateProductSectionsResponse {
   success: boolean;
@@ -68,52 +70,16 @@ interface MasterApiResponse {
 }
 
 /**
- * Convert product sections to landing page prompt format
+ * Convert product sections to landing page prompt format using prompt functions
+ * EXACT IMPLEMENTATION from original code - no modifications
  */
 function convertProductSectionsToPrompt(
   productSections: GenerateProductSectionsResponse
 ): string {
   const { mainProduct, sections } = productSections;
 
-  let prompt = `Create a comprehensive landing page for the product "${mainProduct.title}".
-
-MAIN PRODUCT DETAILS:
-- Title: ${mainProduct.title}
-- Description: ${mainProduct.description}
-- Price: ₹${mainProduct.finalPrice}
-- Rating: ${mainProduct.totalRating}
-- Product URL: ${mainProduct.productUrl}
-
-EXISTING SECTIONS (already created separately):
-
-1. INTRO SECTION:
-   Header: ${sections.intro.header}
-   Content: ${sections.intro.paragraph}
-
-2. COLLECTION SECTION (${sections.collection.header}):
-   Products to feature:`;
-
-  sections.collection.products.forEach((product, index) => {
-    prompt += `
-   ${index + 1}. ${product.title} - ${product.description} (₹${
-      product.finalPrice
-    })`;
-  });
-
-  if (sections.pair_it_with) {
-    prompt += `
-
-3. PAIR IT WITH SECTION:
-   Header: ${sections.pair_it_with.header}
-   Content: ${sections.pair_it_with.text}
-   Recommended Product: ${sections.pair_it_with.product.title} (₹${sections.pair_it_with.product.finalPrice})`;
-  }
-
-  prompt += `
-
-Create additional sections that would naturally complement this product and enhance the landing page experience. Let your creativity flow to build the most compelling product page possible. The above sections are already handled, so focus on creating other valuable sections that would help convert visitors into customers . Also create only content sections here we are not required to create Footers or any such kind of boilerplate sections`;
-
-  return prompt;
+  // Use the exact prompt function from masterApi.ts
+  return getMasterLandingPagePrompt(mainProduct, sections);
 }
 
 /**
@@ -417,7 +383,7 @@ export async function POST(request: NextRequest) {
       }`
     );
 
-    // Step 2: Convert product sections data to landing page prompt
+    // Step 2: Convert product sections data to landing page prompt using prompt function
     console.log(`\n🔄 ========== CONVERTING TO LANDING PAGE PROMPT ==========`);
     const landingPagePrompt = convertProductSectionsToPrompt(
       productSectionsResponse

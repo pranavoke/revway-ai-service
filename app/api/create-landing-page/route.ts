@@ -1,7 +1,9 @@
 // app/api/create-landing-page/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { dynamicLandingPagePrompt } from "@/lib/prompts";
-
+import { 
+  getDynamicLandingPagePrompts,
+  getModuleCreationPrompts
+} from "@/lib/prompts/index";
 import OpenAI from "openai";
 
 // Add timeout wrapper for OpenAI calls
@@ -133,7 +135,7 @@ function normalizeGPTResponse(
 }
 
 /**
- * Process a single section with timeout and error handling
+ * Process a single section with timeout and error handling using prompt functions
  */
 async function processSectionWithTimeout(
   section: any,
@@ -145,127 +147,11 @@ async function processSectionWithTimeout(
   console.log(`\n🔄 Processing section: "${sectionTitle}"`);
   console.log(`📋 Section data:`, section);
 
-  const moduleSystemPrompt = `You are an expert landing page content formatter. Your task is to convert section content into well-structured modules.
-
-Focus on these module types:
-
-1. TEXT modules:
-   - HEADER: Section main title
-   - SUB_HEADER: Secondary titles
-   - PARAGRAPH: Text paragraphs
-   - PAIR_IT_WITH: Product recommendation (content: null, products: array)
-   - GRID: Product collection (content: null, products: array)
-
-2. LIST modules (use 'bulletPoints' field):
-   - BULLET_POINTS: Simple bullet lists
-   - BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with title and supporting text
-
-3. TESTIMONIAL modules (use 'testimonials' field):
-   - TESTIMONIAL_1: All customer reviews in one module. Each testimonial must have: subject, body, reviewerName, rating.
-
-4. MEDIA modules (use 'mediaList' field):
-   - IMAGE: Single image content
-   - IMAGE_CAROUSEL: Multiple images (use if more than one image)
-   - VIDEO: Video content
-
-5. TABLE modules (use 'table' field):
-   - TABLE_1: Two-column table
-   - TABLE_2: Three-column table
-
-   CRITICAL FIELD MAPPINGS:
-- TEXT type → uses 'content' field 
-- LIST type → uses 'bulletPoints' field
-- TESTIMONIAL type → uses 'testimonials' field (see structure below)
-- MEDIA type → uses 'mediaList' field
-- TABLE type → uses 'table' field
-
-Never use 'content' field for non-TEXT types.
-
-TESTIMONIAL structure example:
-{
-  "type": "TESTIMONIAL",
-  "subtype": "TESTIMONIAL_1",
-  "testimonials": [
-    {
-      "subject": "Short summary or headline",
-      "body": "Full testimonial text",
-      "reviewerName": "Customer name",
-      "rating": 5
-    }
-  ]
-}
-
-CRITICAL INSTRUCTIONS:
-1. Always return a JSON object with a "modules" array
-2. Create separate modules for different content types
-3. Include BOTH the header AND the content from the description
-4. If description is a string, create a PARAGRAPH module
-5. If description is an array, create appropriate LIST modules
-6. For testimonials, extract individual reviews into a single TESTIMONIAL_1 module with the above structure
-7. For tables, use TABLE_1 for 2 columns, TABLE_2 for 3 columns (check the number of columns in the data)
-8. For media, use IMAGE_CAROUSEL if more than one image, otherwise IMAGE. For video, use VIDEO.
-
-Response format must be: {"modules": [...]}`;
-
-  const moduleUserPrompt = `Section Title: ${sectionTitle}
-Section Content: ${JSON.stringify(section)}
-
-Convert this section into appropriate modules. You MUST:
-1. Create a HEADER module for the title
-2. Create appropriate content modules for the description
-3. Return the response in this exact format: {"modules": [...]}
-
-CORRECT way to structure (properly segregated):
-[{
-  "type": "TEXT",
-  "subtype": "PARAGRAPH",
-  "content": "Our product is designed with three core values in mind:"
-}, {
-  "type": "LIST",
-  "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-  "bulletPoints": [
-    {"point": "Quality", "supportingText": "We use only the finest materials"},
-    {"point": "Durability", "supportingText": "Built to last for years"},
-    {"point": "Sustainability", "supportingText": "Environmentally friendly production"}
-  ]
-}, {
-  "type": "TEXT",
-  "subtype": "SUB_HEADER",
-  "content": "What we learned?"
-}, {
-  "type": "LIST",
-  "subtype": "BULLET_POINTS",
-  "bulletPoints": [
-    {"point": "Better Quality", "supportingText": null},
-    {"point": "Better Durability", "supportingText": null},
-    {"point": "Better sustainability", "supportingText": null}
-  ]
-}, {
-  "type": "TEXT",
-  "subtype": "PARAGRAPH",
-  "content": "Contact us today to learn more about our commitment to excellence."
-}, {
-  "type": "TESTIMONIAL",
-  "subtype": "TESTIMONIAL_1",
-  "testimonials": [
-    {"subject": "Great product!", "body": "I loved using this product, it really helped me a lot.", "reviewerName": "Jane Doe", "rating": 5}
-  ]
-}, {
-  "type": "MEDIA",
-  "subtype": "IMAGE_CAROUSEL",
-  "mediaList": [
-    {"url": "image1.jpg"},
-    {"url": "image2.jpg"}
-  ]
-}, {
-  "type": "TABLE",
-  "subtype": "TABLE_1",
-  "table": [["Feature", "Value"], ["Color", "Red"]]
-}, {
-  "type": "TABLE",
-  "subtype": "TABLE_2",
-  "table": [["Feature", "Value", "Notes"], ["Color", "Red", "Popular"]]
-}]`;
+  // Use prompt functions instead of hardcoded prompts
+  const { systemPrompt, userPrompt } = getModuleCreationPrompts({
+    sectionTitle,
+    sectionData: section
+  });
 
   console.log(`\n📤 SENDING MODULE PROMPT FOR SECTION: "${sectionTitle}"`);
 
@@ -275,8 +161,8 @@ CORRECT way to structure (properly segregated):
         model: "gpt-4o",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: moduleSystemPrompt },
-          { role: "user", content: moduleUserPrompt },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         temperature: 0.3, // Lower temperature for more consistent responses
       }),
@@ -342,29 +228,16 @@ export async function POST(request: NextRequest) {
       console.log(`💡 Additional instructions: ${body.prompt}`);
     }
 
-    // Initialize OpenAI with custom prompts
+    // Initialize OpenAI
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Step 1: Analyze the URL and determine appropriate sections
-    const systemPrompt = dynamicLandingPagePrompt;
-    const userPrompt = `URL: ${body.url}
-      ${body.prompt ? `Additional Instructions: ${body.prompt}` : ""}
-      
-      Analyze this URL and create a comprehensive landing page structure with appropriate sections.
-      Determine the number and types of sections based on the URL's content and purpose.
-      
-      The response should be a JSON object with the following structure:
-      {
-        "title": "Landing Page Title",
-        "sections": [
-          {
-            "title": "Section Title",
-            "description": "Detailed section content or array of bullet points"
-          }
-        ]
-      }`;
+    // Step 1: Analyze the URL and determine appropriate sections using prompt functions
+    const { systemPrompt, userPrompt } = getDynamicLandingPagePrompts({
+      url: body.url,
+      prompt: body.prompt
+    });
 
     console.log(`\n📤 SENDING INITIAL LANDING PAGE PROMPT`);
 

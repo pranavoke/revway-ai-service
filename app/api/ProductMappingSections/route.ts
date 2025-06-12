@@ -1,6 +1,11 @@
-// app/api/generate-product-sections/route.ts
+// app/api/ProductMappingSections/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import {
+  getProductIntroSectionPrompt,
+  getProductPairItWithSectionPrompt,
+  getAIProductMatchingPrompt,
+} from "@/lib/prompts/index";
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -171,7 +176,7 @@ function findProductsByUrls(
     .filter((product): product is Product => product !== undefined);
 }
 
-// AI-powered product matching
+// AI-powered product matching using prompt functions
 async function getAIProductMatching(
   mainProduct: Product,
   allProducts: Product[]
@@ -189,56 +194,24 @@ async function getAIProductMatching(
       rating: product.totalRating,
     }));
 
-    const prompt = `
-      Analyze the main product and suggest the best complementary products for cross-selling and collection.
-
-      MAIN PRODUCT:
-      Title: ${mainProduct.title}
-      Description: ${stripHtmlTags(mainProduct.description)}
-      Price: ₹${mainProduct.finalPrice}
-
-      AVAILABLE PRODUCTS:
-      ${JSON.stringify(productList, null, 2)}
-
-      TASK:
-      1. Select 1 product that would be PERFECT to pair with the main product (for cross-selling)
-      2. Select products for a "You might also like" collection
-      3. Consider factors like:
-         - Complementary functionality
-         - Similar target audience
-         - Price compatibility
-         - Product synergy
-         - Customer journey enhancement
-
-      REQUIREMENTS:
-      - The pair product should enhance or complement the main product's benefits
-      - Collection products should appeal to the same customer but offer variety
-      - Avoid selecting the same product for both pair and collection
-      - Consider different price points for collection diversity
-      - Return ONLY the JSON object, no markdown formatting, no code blocks
-
-      Return the response as a pure JSON object without any markdown formatting:
-      {
-        "pairProduct": "complete_product_url_here",
-        "collectionProducts": ["url1", "url2", "url3", "url4"],
-        "reasoning": "Brief explanation of why these products were selected"
-      }
-    `;
+    // Use prompt function instead of hardcoded prompt
+    const { systemPrompt, userPrompt } = getAIProductMatchingPrompt({
+      mainProduct,
+      productList,
+    });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content:
-            "You are an expert e-commerce product analyst who specializes in cross-selling and product recommendations. Always return pure JSON without any markdown code blocks or formatting.",
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ],
-
       temperature: 0.6,
     });
 
@@ -252,23 +225,24 @@ async function getAIProductMatching(
   }
 }
 
-// Helper function to generate AI content
-async function generateAIContent(prompt: string): Promise<string | null> {
+// Helper function to generate AI content using prompt functions
+async function generateAIContent(
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string | null> {
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content:
-            "You are a skilled marketing copywriter specializing in product descriptions and cross-selling content. Keep responses concise and engaging. Always return pure JSON without any markdown code blocks or formatting.",
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ],
-
       temperature: 0.7,
     });
 
@@ -406,25 +380,18 @@ export async function POST(request: NextRequest) {
       collection: { header: "You Might Also Like", products: [] },
     };
 
-    // 1. Generate Intro Section
-    const introPrompt = `
-      Create an engaging product introduction for "${mainProduct.title}".
-      
-      Product Description: ${stripHtmlTags(mainProduct.description)}
-      ${additionalPrompt ? `Additional Context: ${additionalPrompt}` : ""}
-      
-      Generate:
-      1. A compelling page header (5-8 words)
-      2. An engaging paragraph that highlights the key benefits
-      
-      Return the response as a pure JSON object without any markdown formatting:
-      {
-        "header": "Your header here",
-        "paragraph": "Your paragraph here"
-      }
-    `;
+    // 1. Generate Intro Section using prompt function
+    const { systemPrompt: introSystemPrompt, userPrompt: introUserPrompt } =
+      getProductIntroSectionPrompt({
+        productTitle: mainProduct.title,
+        productDescription: stripHtmlTags(mainProduct.description),
+        additionalPrompt,
+      });
 
-    const introContent = await generateAIContent(introPrompt);
+    const introContent = await generateAIContent(
+      introSystemPrompt,
+      introUserPrompt
+    );
 
     try {
       if (introContent) {
@@ -438,34 +405,20 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // 2. Generate Pair It With Section
+    // 2. Generate Pair It With Section using prompt function
     if (pairProduct) {
-      const pairPrompt = `
-        Create a compelling cross-sell section explaining why "${
-          pairProduct.title
-        }" should be bought with "${mainProduct.title}".
-        
-        Main Product: ${mainProduct.title} - ${stripHtmlTags(
-        mainProduct.description
-      )}
-        Complementary Product: ${pairProduct.title} - ${stripHtmlTags(
-        pairProduct.description
-      )}
-        
-        Objective: Show how buying both products together maximizes benefits compared to buying only the main product.
-        
-        Generate:
-        1. A punchy, eye-catching header (4-6 words)
-        2. Short persuasive text (2-3 sentences) explaining the combined benefits
-        
-        Return the response as a pure JSON object without any markdown formatting:
-        {
-          "header": "Your header here",
-          "text": "Your text here"
-        }
-      `;
+      const { systemPrompt: pairSystemPrompt, userPrompt: pairUserPrompt } =
+        getProductPairItWithSectionPrompt({
+          mainProductTitle: mainProduct.title,
+          mainProductDescription: stripHtmlTags(mainProduct.description),
+          pairProductTitle: pairProduct.title,
+          pairProductDescription: stripHtmlTags(pairProduct.description),
+        });
 
-      const pairContent = await generateAIContent(pairPrompt);
+      const pairContent = await generateAIContent(
+        pairSystemPrompt,
+        pairUserPrompt
+      );
 
       try {
         if (pairContent) {
