@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import axios from "axios";
 import { OpenAI } from "openai";
+import { getHtmlToModulesClassificationPrompt } from "@/lib/prompts/index";
 
-// Type definitions for our module system
+// Type definitions matching Master API structure exactly
 type ModuleType = "TEXT" | "MEDIA" | "LIST" | "TESTIMONIAL" | "TABLE";
 
 type TextSubtype =
@@ -17,15 +18,13 @@ type TextSubtype =
   | "PAGE_HEADER"
   | "BANNER";
 
-type MediaSubtype = "VIDEO" | "IMAGE";
+type MediaSubtype = "VIDEO" | "IMAGE" | "IMAGE_CAROUSEL";
 
-type ListSubtype =
-  | "BULLET_POINTS"
-  | "BULLET_POINTS_WITH_SUPPORTING_TEXT"
- 
-type TestimonialSubtype = "TESTIMONIAL" | "REVIEW";
+type ListSubtype = "BULLET_POINTS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT";
 
-type TableSubtype = "TABLE";
+type TestimonialSubtype = "TESTIMONIAL_1" | "REVIEW";
+
+type TableSubtype = "TABLE_1" | "TABLE_2";
 
 type ModuleSubtype =
   | TextSubtype
@@ -37,12 +36,31 @@ type ModuleSubtype =
 interface Module {
   type: ModuleType;
   subtype: ModuleSubtype;
-  content: any;
+  content?: any;
+  bulletPoints?: Array<{
+    point: string;
+    supportingText: string | null;
+  }>;
+  testimonials?: Array<{
+    subject: string;
+    body: string;
+    reviewerName: string;
+    rating: number;
+  }>;
+  mediaList?: Array<{
+    url: string;
+    alt?: string;
+    title?: string;
+    thumbnail?: string;
+  }>;
+  table?: string[][];
 }
 
-interface ModuleResponse {
+// Updated to match Master API structure exactly
+interface SectionResponse {
+  sectionTitle: string;
   totalModules: number;
-  moduleCounts: Record<ModuleType, number>;
+  moduleCounts: Record<string, number>;
   modules: Module[];
 }
 
@@ -96,10 +114,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Return in Master API format - array of sections
+    const sectionsArray = Object.entries(processedSections)
+      .filter(([_, section]) => section !== null)
+      .map(([key, section]) => ({
+        ...section!,
+        sectionTitle: key,
+      }));
+
     return NextResponse.json({
       success: true,
-      data: processedSections,
-      sectionsCount: Object.keys(processedSections).length,
+      sections: sectionsArray,
+      sectionsCount: sectionsArray.length,
     });
   } catch (error: any) {
     console.error("Error processing HTML:", error);
@@ -146,9 +172,9 @@ async function fetchHtml(url: string): Promise<string> {
 async function processSections(
   htmlContent: string,
   sectionTemplateMap: Record<string, string>
-): Promise<Record<string, ModuleResponse | null>> {
+): Promise<Record<string, SectionResponse | null>> {
   const $ = cheerio.load(htmlContent);
-  const result: Record<string, ModuleResponse | null> = {};
+  const result: Record<string, SectionResponse | null> = {};
 
   // Log all available section IDs for debugging
   console.log("Available Shopify sections:");
@@ -175,7 +201,14 @@ async function processSections(
         if (sectionHtml) {
           // Process the HTML through the module classification system
           const processedSection = await classifyIntoModules(sectionHtml);
-          result[sectionKey] = processedSection;
+
+          // Convert to Master API format
+          result[sectionKey] = {
+            sectionTitle: sectionKey,
+            totalModules: processedSection.totalModules,
+            moduleCounts: processedSection.moduleCounts,
+            modules: processedSection.modules,
+          };
           console.log(`Successfully processed section: ${sectionKey}`);
         } else {
           result[sectionKey] = null; // Empty section
@@ -199,9 +232,9 @@ async function processSections(
 // Function for auto-discovering sections
 async function autoDiscoverSections(
   htmlContent: string
-): Promise<Record<string, ModuleResponse | null>> {
+): Promise<Record<string, SectionResponse | null>> {
   const $ = cheerio.load(htmlContent);
-  const result: Record<string, ModuleResponse | null> = {};
+  const result: Record<string, SectionResponse | null> = {};
 
   // Find all Shopify sections in the document
   const sections = $(".shopify-section");
@@ -249,8 +282,13 @@ async function autoDiscoverSections(
           // Process the HTML through the module classification system
           const processedSection = await classifyIntoModules(sectionHtml);
 
-          // Store the result with a meaningful key
-          result[sectionName] = processedSection;
+          // Convert to Master API format
+          result[sectionName] = {
+            sectionTitle: sectionName,
+            totalModules: processedSection.totalModules,
+            moduleCounts: processedSection.moduleCounts,
+            modules: processedSection.modules,
+          };
           console.log(`Successfully processed section: ${sectionName}`);
         } else {
           console.log(
@@ -266,8 +304,17 @@ async function autoDiscoverSections(
   return result;
 }
 
-// Function to classify HTML into modules using OpenAI
-async function classifyIntoModules(html: string): Promise<ModuleResponse> {
+// Updated response interface to match internal processing
+interface InternalModuleResponse {
+  totalModules: number;
+  moduleCounts: Record<string, number>;
+  modules: Module[];
+}
+
+// Function to classify HTML into modules using prompt functions and OpenAI
+async function classifyIntoModules(
+  html: string
+): Promise<InternalModuleResponse> {
   // Clean the HTML for processing
   const $ = cheerio.load(html);
 
@@ -276,194 +323,22 @@ async function classifyIntoModules(html: string): Promise<ModuleResponse> {
 
   const cleanHtml = $.html();
 
-  // Prepare the prompt for classification
-  const prompt = `
-HTML to Modules Conversion Task
-
-Context
-You are tasked with analyzing an HTML section and breaking it down into structured modules according to our predefined module system. Each section should be classified into appropriate module types and subtypes.
-
-Module Types
-The following are the available module types and their subtypes:
-
-TEXT Modules
-
-HEADER: Usually Section Opener .
-SUB_HEADER: Secondary title text
-PARAGRAPH: Standard paragraph text
-CTA: Call to Action buttons or links
-SHOP_NOW: Shopping-specific call to action
-PAGE_HEADER: Main page title
-BANNER: Banner text, typically prominent
-
-
-MEDIA Modules
-
-VIDEO: Video content with link
-IMAGE: Image with the link 
-
-
-Bullet point Modules
-
-BULLET_POINTS: Simple bullet point list
-BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with additional explanatory text
-
-
-
-TESTIMONIAL Modules
-
-TESTIMONIAL: Customer or user testimonial
-REVIEW: Product or service review
-
-TABLE Modules
-
-Table : Table with headers and rows
-
-
-Your Task
-
-Analyze the provided HTML section
-Identify all distinct modules within the section
-For each identified module:
-1.Determine the primary module type (TEXT, MEDIA, LIST, TESTIMONIAL, TABLE)
-2.Identify the appropriate subtype
-3.The most important of all "Want the exact content no rubbish at all"
-
-
-Example Output JSON Format
-{
-  "totalModules": 15,
-  "moduleCounts": {
-    "TEXT": 6,
-    "MEDIA": 2,
-    "LIST": 5,
-    "TESTIMONIAL": 1,
-    "TABLE": 1
-  },
-  "modules": [
-    {
-      "type": "TEXT",
-      "subtype": "HEADER",
-      "content": "Welcome to Our Wellness Platform"
-    },
-    {
-      "type": "TEXT",
-      "subtype": "SUB_HEADER",
-      "content": "Your journey to better health starts here"
-    },
-    {
-      "type": "TEXT",
-      "subtype": "PARAGRAPH",
-      "content": "Our platform offers personalized wellness plans tailored to your unique needs using time-tested Ayurvedic science."
-    },
-    {
-      "type": "TEXT",
-      "subtype": "CTA",
-      "content": {
-        "text": "Explore Plans",
-        "url": "/plans"
-      }
-    },
-    {
-      "type": "TEXT",
-      "subtype": "SHOP_NOW",
-      "content": {
-        "text": "Shop Wellness Kits",
-        "url": "/shop"
-      }
-    },
-    {
-      "type": "TEXT",
-      "subtype": "PAGE_HEADER",
-      "content": "Wellness Programs for Every Lifestyle"
-    },
-    {
-      "type": "MEDIA",
-      "subtype": "IMAGE",
-      "content": {
-        "src": "https://example.com/images/wellness_kit.jpg",
-        "alt": "Ayurvedic Wellness Kit"
-      }
-    },
-    {
-      "type": "MEDIA",
-      "subtype": "VIDEO",
-      "content": {
-        "src": "https://example.com/videos/intro.mp4",
-        "thumbnail": "https://example.com/thumb.jpg",
-        "title": "Introduction to Holistic Wellness"
-      }
-    },
-    {
-      "type": "LIST",
-      "subtype": "BULLET_POINTS",
-      "content": [
-        "Pure Ayurvedic Ingredients",
-        "Clinically Tested Formulas",
-        "Free Wellness Consultation"
-      ]
-    },
-    {
-      "type": "LIST",
-      "subtype": "BULLET_POINTS_WITH_SUPPORTING_TEXT",
-      "content": [
-        {
-          "point": "Boosts Immunity",
-          "supportingText": "Natural herbs enhance your body's defense mechanism."
-        },
-        {
-          "point": "Reduces Stress",
-          "supportingText": "Adaptogens help your body manage stress better."
-        }
-      ]
-    },
-  
-    {
-      "type": "TESTIMONIAL",
-      "subtype": "TESTIMONIAL",
-      "content": {
-        "quote": "This changed my life! My hair feels fuller and I'm more energized.",
-        "author": "Aarav Patel",
-        "designation": "Customer since 2022"
-      }
-    },
-    {
-      "type": "TABLE",
-      "subtype": "TABLE",
-      "content": {
-        "headers": ["Ingredient", "Benefit", "Source"],
-        "rows": [
-          ["Ashwagandha", "Reduces Stress", "India"],
-          ["Shatavari", "Balances Hormones", "Nepal"],
-          ["Brahmi", "Enhances Focus", "Sri Lanka"]
-        ]
-      }
-    }
-  ]
-}
-
-Important Notes
-    1. Pay attention to the semantic purpose of elements rather than just their HTML tags
-    2. Some elements may contain multiple modules nested within them
-    3. When in doubt about a module type, choose the one that best represents the user's intent also Stick to the modules given 
-    4. Provide rationale for any ambiguous classifications
-
-
-
-    HTML : ${cleanHtml}
-`;
+  // Use prompt function instead of hardcoded prompt
+  const { systemPrompt, userPrompt } = getHtmlToModulesClassificationPrompt({
+    cleanHtml,
+  });
 
   try {
     const processingTimeout = 30000;
 
-    const timeoutPromise = new Promise<ModuleResponse>((_, reject) => {
+    const timeoutPromise = new Promise<InternalModuleResponse>((_, reject) => {
       setTimeout(
         () => reject(new Error("Language model request timed out")),
         processingTimeout
       );
     });
 
-    const processingPromise = new Promise<ModuleResponse>(
+    const processingPromise = new Promise<InternalModuleResponse>(
       async (resolve, reject) => {
         try {
           const response = await openai.chat.completions.create({
@@ -471,10 +346,9 @@ Important Notes
             messages: [
               {
                 role: "system",
-                content:
-                  "You are a helpful assistant that classifies HTML into structured modules according to specific guidelines.",
+                content: systemPrompt,
               },
-              { role: "user", content: prompt },
+              { role: "user", content: userPrompt },
             ],
             temperature: 0.1, // Low temperature for more deterministic results
             response_format: { type: "json_object" }, // Ensure response is valid JSON
@@ -488,7 +362,15 @@ Important Notes
           }
 
           try {
-            resolve(JSON.parse(content) as ModuleResponse);
+            const parsed = JSON.parse(content) as InternalModuleResponse;
+
+            // Normalize the modules to ensure proper field structure
+            const normalizedModules = parsed.modules.map(normalizeModule);
+
+            resolve({
+              ...parsed,
+              modules: normalizedModules,
+            });
           } catch (e) {
             reject(
               new Error("Failed to parse JSON from language model response")
@@ -508,14 +390,124 @@ Important Notes
     // Return a fallback response in case of error
     return {
       totalModules: 0,
-      moduleCounts: {
-        TEXT: 0,
-        MEDIA: 0,
-        LIST: 0,
-        TESTIMONIAL: 0,
-        TABLE: 0,
-      },
+      moduleCounts: {},
       modules: [],
     };
   }
+}
+
+// Function to fix image URLs that are missing protocol
+function fixImageUrl(url: string): string {
+  if (!url) return url;
+
+  // Check if URL starts with // (protocol-relative)
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+
+  // Check if URL starts with / (relative to domain) - though less common in your case
+  if (url.startsWith("/") && !url.startsWith("//")) {
+    // You might need to add your domain here if needed
+    return url; // Keep as is for now, or add domain if needed
+  }
+
+  // If URL already has protocol, return as is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // If no protocol at all, assume https
+  return `https://${url}`;
+}
+
+// Function to fix image URLs in media objects
+function fixMediaUrls(mediaList: any[]): any[] {
+  return mediaList.map((media) => ({
+    ...media,
+    url: media.url ? fixImageUrl(media.url) : media.url,
+    thumbnail: media.thumbnail ? fixImageUrl(media.thumbnail) : media.thumbnail,
+  }));
+}
+
+// Function to normalize modules to Master API structure
+function normalizeModule(module: any): Module {
+  const normalized: Module = {
+    type: module.type,
+    subtype: module.subtype,
+  };
+
+  // Handle different module types with proper field mapping
+  switch (module.type) {
+    case "TEXT":
+      normalized.content = module.content;
+      break;
+
+    case "LIST":
+      // Ensure bulletPoints structure matches Master API
+      if (module.bulletPoints) {
+        normalized.bulletPoints = module.bulletPoints;
+      } else if (module.content) {
+        // Convert old content format to new bulletPoints format
+        normalized.bulletPoints = Array.isArray(module.content)
+          ? module.content.map((item: any) =>
+              typeof item === "string"
+                ? { point: item, supportingText: null }
+                : item
+            )
+          : [{ point: module.content, supportingText: null }];
+      }
+      break;
+
+    case "TESTIMONIAL":
+      // Ensure testimonials structure matches Master API
+      if (module.testimonials) {
+        normalized.testimonials = module.testimonials;
+      } else if (module.content) {
+        // Convert old content format to new testimonials format
+        normalized.testimonials = [
+          {
+            subject:
+              module.content.quote?.substring(0, 50) || "Customer Review",
+            body: module.content.quote || module.content.body || "",
+            reviewerName:
+              module.content.author ||
+              module.content.reviewerName ||
+              "Anonymous",
+            rating: module.content.rating || 5,
+          },
+        ];
+      }
+      break;
+
+    case "MEDIA":
+      // Ensure mediaList structure matches Master API and fix image URLs
+      if (module.mediaList) {
+        normalized.mediaList = fixMediaUrls(module.mediaList);
+      } else if (module.content) {
+        // Convert old content format to new mediaList format and fix URLs
+        const mediaArray = Array.isArray(module.content)
+          ? module.content
+          : [module.content];
+        normalized.mediaList = fixMediaUrls(mediaArray);
+      }
+      break;
+
+    case "TABLE":
+      // Ensure table structure matches Master API
+      if (module.table) {
+        normalized.table = module.table;
+      } else if (module.content) {
+        // Convert old content format to new table format
+        if (module.content.headers && module.content.rows) {
+          normalized.table = [module.content.headers, ...module.content.rows];
+        }
+      }
+      break;
+
+    default:
+      // For any other types, keep the content field
+      normalized.content = module.content;
+  }
+
+  return normalized;
 }

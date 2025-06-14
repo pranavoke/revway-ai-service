@@ -1,0 +1,215 @@
+{
+  "sections": [
+    {
+      "sectionTitle": "Intro Section",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Sleek Hair, All Day Long"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Transform your hair routine with our Anti-Frizz Hair Serum, offering a full 8 hours of frizz-free protection. This revolutionary formula not only keeps your hair smooth and manageable but also provides essential heat protection, ensuring your locks stay healthy and stunning. Say goodbye to unruly hair and hello to sleek sophistication!"
+        }
+      ]
+    },
+    {
+      "sectionTitle": "The Science Behind Frizz Control",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "The Science Behind Frizz Control"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Discover how our Anti-Frizz Hair Serum works at the molecular level to tame unruly hair. Our unique formula penetrates each strand, locking in moisture and creating a protective barrier against humidity. Learn how this serum keeps your hair smooth and manageable for up to 8 hours, no matter the weather."
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Heat Protection for Healthier Hair",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Heat Protection for Healthier Hair"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Explore the dual benefits of our serum that not only fights frizz but also shields your hair from heat damage. Whether youre blow-drying, straightening, or curling, our serum provides essential protection, ensuring your hair remains healthy, vibrant, and damage-free.}]},{sectionTitle:Natural Ingredients for Optimal Care,totalModules:2,moduleCounts:{TEXT:2},modules:[{type:TEXT,subtype:HEADER,content:Natural Ingredients for Optimal Care},{type:TEXT,subtype:PARAGRAPH,content:Our serum is crafted with a blend of natural ingredients known for their hair-nourishing properties. From argan oil to aloe vera, each component is carefully selected to hydrate, strengthen, and smooth your hair without any harmful chemicals. Experience natures best in every drop."
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Customer Success Stories",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Customer Success Stories"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Hear from our satisfied customers who have transformed their hair care routine with our Anti-Frizz Hair Serum. Read testimonials and see before-and-after photos that showcase the remarkable difference our product has made in their lives."
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Expert Tips for Frizz-Free Hair",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Expert Tips for Frizz-Free Hair"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Get professional advice on how to maximize the benefits of our serum. From application techniques to complementary hair care practices, learn how to achieve salon-quality results at home and maintain sleek, frizz-free hair every day."
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Frequently Asked Questions",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 1, "LIST": 1 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Frequently Asked Questions"
+        },
+        {
+          "type": "LIST",
+          "subtype": "BULLET_POINTS",
+          "bulletPoints": [
+            {
+              "point": "How often should I use the Anti-Frizz Hair Serum?",
+              "supportingText": null
+            },
+            {
+              "point": "Can the serum be used on all hair types?",
+              "supportingText": null
+            },
+            {
+              "point": "Is the serum safe for color-treated hair?",
+              "supportingText": null
+            },
+            {
+              "point": "What is the shelf life of the product?",
+              "supportingText": null
+            },
+            {
+              "point": "Does the serum contain any sulfates or parabens?",
+              "supportingText": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Pair It With",
+      "totalModules": 3,
+      "moduleCounts": { "TEXT": 1 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "Smooth Hair, Healthy Scalp"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PARAGRAPH",
+          "content": "Pair our Anti-Frizz Hair Serum with the Neem Wood Comb for ultimate hair care. While the serum offers 8 hours of frizz-free shine and heat protection, the comb gently detangles and combats dandruff, leaving your hair silky and your scalp refreshed."
+        },
+        {
+          "type": "TEXT",
+          "subtype": "PAIR_IT_WITH",
+          "content": null,
+          "products": [
+            {
+              "id": 41,
+              "title": "Neem Wood Comb",
+              "productUrl": "https://organique-care.myshopify.com/products/neem-wood-comb",
+              "imageUrl": "https://cdn.shopify.com/s/files/1/0691/7845/8336/files/1_b475e33c-2a4d-45e2-83ca-b878fc2cc586.jpg?v=1747758832",
+              "finalPrice": 195,
+              "description": "",
+              "totalRating": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionTitle": "Product Collection",
+      "totalModules": 2,
+      "moduleCounts": { "TEXT": 2 },
+      "modules": [
+        {
+          "type": "TEXT",
+          "subtype": "HEADER",
+          "content": "You Might Also Like"
+        },
+        {
+          "type": "TEXT",
+          "subtype": "GRID",
+          "content": null,
+          "products": [
+            {
+              "id": 49,
+              "title": "Aloe Vera Gel",
+              "description": "100% pure and cold-pressed | Skin &amp; hair multi-tasker",
+              "productUrl": "https://organique-care.myshopify.com/products/aloe-vera-gel",
+              "imageUrl": "https://cdn.shopify.com/s/files/1/0691/7845/8336/files/Picture12_1.jpg?v=1747731122",
+              "finalPrice": 379,
+              "totalRating": 4.866666666666666
+            },
+            {
+              "id": 47,
+              "title": "Goat Milk Shampoo",
+              "description": "Nourishes &amp; strengthens hair | Balances scalp pH",
+              "productUrl": "https://organique-care.myshopify.com/products/goat-milk-shampoo",
+              "imageUrl": "https://cdn.shopify.com/s/files/1/0691/7845/8336/files/Picture15.png?v=1747738612",
+              "finalPrice": 550,
+              "totalRating": 4.733333333333333
+            },
+            {
+              "id": 46,
+              "title": "Hair Growth Oil",
+              "description": "Reduces hair fall | Promotes hair growth",
+              "productUrl": "https://organique-care.myshopify.com/products/hair-growth-oil",
+              "imageUrl": "https://cdn.shopify.com/s/files/1/0691/7845/8336/files/Picture16.png?v=1747739951",
+              "finalPrice": 340,
+              "totalRating": 4.866666666666666
+            },
+            {
+              "id": 42,
+              "title": "Anti-Dandruff Hair Oil",
+              "description": "Clears dandruff &amp; reduces hair fall",
+              "productUrl": "https://organique-care.myshopify.com/products/anti-dandruff-hair-oil",
+              "imageUrl": "https://cdn.shopify.com/s/files/1/0691/7845/8336/files/Picture20.png?v=1747749243",
+              "finalPrice": 599,
+              "totalRating": 4.9
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

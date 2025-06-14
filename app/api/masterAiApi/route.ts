@@ -61,6 +61,7 @@ interface MasterApiRequest {
 }
 
 interface MasterApiResponse {
+  title: string;
   sections: Array<{
     sectionTitle: string;
     totalModules: number;
@@ -333,6 +334,50 @@ function combineSections(
 }
 
 /**
+ * Call the enhance-landing-page API
+ */
+async function callEnhanceLandingPage(
+  title: string,
+  sections: Array<{
+    sectionTitle: string;
+    totalModules: number;
+    moduleCounts: Record<string, number>;
+    modules: any[];
+  }>
+): Promise<MasterApiResponse | null> {
+  try {
+    console.log(`🔄 Calling enhance-landing-page API`);
+
+    const response = await fetch(
+      `${
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      }/api/enhance-landing-page`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          sections,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`enhance-landing-page API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`✅ enhance-landing-page API response received`);
+    return data;
+  } catch (error) {
+    console.error(`❌ Error calling enhance-landing-page API:`, error);
+    return null;
+  }
+}
+
+/**
  * Main API handler
  */
 export async function POST(request: NextRequest) {
@@ -433,22 +478,39 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Combined sections successfully`);
     console.log(`📊 Total combined sections: ${combinedSections.length}`);
 
-    // Step 6: Build final response
-    const finalResponse: MasterApiResponse = {
-      sections: combinedSections,
-    };
+    // Step 6: Call enhance-landing-page API
+    console.log(`\n🔄 ========== ENHANCING LANDING PAGE ==========`);
+    const enhancedResponse = await callEnhanceLandingPage(
+      landingPageResponse.title,
+      combinedSections
+    );
 
+    if (!enhancedResponse) {
+      console.log(`⚠️ Enhancement failed, returning combined sections`);
+      return NextResponse.json({
+        title: landingPageResponse.title,
+        sections: combinedSections,
+      });
+    }
+
+    console.log(`✅ Landing page enhanced successfully`);
+    console.log(
+      `📊 Enhanced sections count: ${enhancedResponse.sections.length}`
+    );
+
+    // Step 7: Return enhanced response
     console.log(`\n🎉 ========== MASTER API COMPLETED SUCCESSFULLY ==========`);
     console.log(`📊 Final Response Summary:`);
     console.log(`   📋 Product: ${productSectionsResponse.mainProduct.title}`);
+    console.log(`   📋 Page Title: ${enhancedResponse.title}`);
     console.log(`   📦 Product Sections: ${productSectionModules.length}`);
     console.log(
       `   📦 Landing Page Sections: ${landingPageResponse.modulesBySection.length}`
     );
-    console.log(`   📦 Combined Sections: ${combinedSections.length}`);
+    console.log(`   📦 Enhanced Sections: ${enhancedResponse.sections.length}`);
     console.log(`⏰ Request completed at: ${new Date().toISOString()}`);
 
-    return NextResponse.json(finalResponse);
+    return NextResponse.json(enhancedResponse);
   } catch (error) {
     console.error(`💥 ========== MASTER API FATAL ERROR ==========`);
     console.error(`❌ Error in master API:`, error);

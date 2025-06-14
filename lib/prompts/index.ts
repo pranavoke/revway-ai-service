@@ -19,3 +19,6 @@ export {
 
 // Master API Prompts
 export { getMasterLandingPagePrompt } from "./masterApi";
+
+// HTML to Modules API Prompts
+export { getHtmlToModulesClassificationPrompt } from "./htmlToModules";
