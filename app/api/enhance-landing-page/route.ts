@@ -238,7 +238,7 @@ function getSystemPrompt(): string {
   return `You are an expert landing page optimizer and content strategist specializing in post-generation enhancement and filtering. Your role is to analyze existing landing page sections and optimize them for maximum conversion and user experience without adding or removing sections.
   
   Your core responsibilities:
-  1. **ENHANCE EXISTING SECTIONS ONLY** - Never add new sections or remove existing ones
+ - 1 **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged
   2. **PRESERVE INTRO SECTION STRUCTURE** - Keep intro section exactly as is (header + paragraph format)
   3. **OPTIMIZE NON-INTRO SECTION STRUCTURE** - Improve how content is organized within all other sections
   4. **CONVERT TO BETTER FORMATS** - Transform content into more effective module types when appropriate (except intro)
@@ -259,7 +259,7 @@ function getSystemPrompt(): string {
   
   Key Enhancement Rules:
   - HEADER MODULE IS COMPULSORY FOR EVERY SECTION 
-  - **INTRO SECTION**: Leave completely unchanged - maintain original header + paragraph structure
+  - **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged 
   - **MODULE VARIETY MANDATORY**: Each section must use different module types/subtypes
   - **MEDIA MODULES REQUIRED**: Minimum 50% of sections must include IMAGE or IMAGE_CAROUSEL modules
   - FAQ sections with generic or low-value questions should be restructured as informational content or tables
@@ -291,10 +291,15 @@ function getUserPrompt(sections: Section[]): string {
   
   ICON LIBRARY AVAILABLE (use FULL URLs):
   ${iconList}
+
+  MOST IMPORTANT RULE PLAY AROUND DIFFERENT SECTIONS
+  - **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged 
   
   ENHANCEMENT OBJECTIVES:
-  1. **Section Count Optimization**: Current sections: ${currentSectionCount}
-     - Target: 6-8 sections total
+  1. **Section Count Optimization**: Current sections: ${
+    currentSectionCount - 3
+  }
+     - Target: 6-8 sections total (excluding the 3 core sections )
      - If >8: Consolidate similar/redundant sections
      - If <6: Enhance existing sections with richer content structure or Create more if required .
   
