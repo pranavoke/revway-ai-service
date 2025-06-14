@@ -7,194 +7,195 @@ const openai = new OpenAI({
 });
 
 // Icon library data with URLs
+
 const ICON_LIBRARY = [
   {
-    name: "Pin",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Pin.png?updatedAt=1745918846119",
-  },
-  {
-    name: "Tick",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Tick.png?updatedAt=1745918846124",
-  },
-  {
-    name: "Verified Reviews",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Verified%20Reviews.png?updatedAt=1745918846122",
+    name: "Made in India",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Made%20in%20India.png?updatedAt=1749905148763",
   },
   {
     name: "24x7 Support",
-    url: "https://ik.imagekit.io/btezpgst5/icons/24x7%20Support.png?updatedAt=1745918846117",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/24x7%20Support.png?updatedAt=1749905148783",
+  },
+  {
+    name: "Tick",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Tick.png?updatedAt=1749905148888",
+  },
+  {
+    name: "Pin",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Pin.png?updatedAt=1749905148897",
   },
   {
     name: "FDA Approved",
-    url: "https://ik.imagekit.io/btezpgst5/icons/FDA%20Approved.png?updatedAt=1745918846172",
-  },
-  {
-    name: "Award Winning",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Award%20Winning.png?updatedAt=1745918846185",
-  },
-  {
-    name: "Made in India",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Made%20in%20India.png?updatedAt=1745918846182",
-  },
-  {
-    name: "Lightning",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Lightining.png?updatedAt=1745918846406",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/FDA%20Approved.png?updatedAt=1749905148893",
   },
   {
     name: "Warranty",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Warranty.png?updatedAt=1745918846402",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Warranty.png?updatedAt=1749905148912",
   },
   {
     name: "Best Seller",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Best%20Seller.png?updatedAt=1745918846410",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Best%20Seller.png?updatedAt=1749905148909",
+  },
+  {
+    name: "Lightining",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Lightining.png?updatedAt=1749905148931",
+  },
+  {
+    name: "Award Winning",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Award%20Winning.png?updatedAt=1749905148956",
+  },
+  {
+    name: "Verified Reviews",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Verified%20Reviews.png?updatedAt=1749905148974",
   },
   {
     name: "Dot",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Dot.png?updatedAt=1745918849690",
-  },
-  {
-    name: "Trending Product",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Trending%20Product.png?updatedAt=1745918849662",
-  },
-  {
-    name: "Cruelty Free",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Cruelty%20Free.png?updatedAt=1745918851505",
-  },
-  {
-    name: "Clinically Proven",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Clinically%20Proven.png?updatedAt=1745918851553",
-  },
-  {
-    name: "Worldwide Shipping",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Worldwide%20Shipping.png?updatedAt=1745918851874",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Dot.png?updatedAt=1749905153092",
   },
   {
     name: "Sparkle",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Sparkle.png?updatedAt=1745918851871",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Sparkle.png?updatedAt=1749905153920",
   },
   {
-    name: "Tamper Proof Packaging",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Tamper%20Proof%20Packaging.png?updatedAt=1745918851925",
+    name: "Cruelty Free",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Cruelty%20Free.png?updatedAt=1749905153897",
   },
   {
-    name: "Eco Friendly",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Eco%20Friendly.png?updatedAt=1745918851988",
+    name: "Trending Product",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Trending%20Product.png?updatedAt=1749905153916",
+  },
+  {
+    name: "Clinically Proven",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Clinically%20Proven.png?updatedAt=1749905154022",
   },
   {
     name: "Influencer Approved",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Influencer%20Approved.png?updatedAt=1745918852500",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Influencer%20Approved.png?updatedAt=1749905154283",
+  },
+  {
+    name: "Tamper Proof Packaging",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Tamper%20Proof%20Packaging.png?updatedAt=1749905154384",
+  },
+  {
+    name: "Worldwide Shipping",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Worldwide%20Shipping.png?updatedAt=1749905154421",
+  },
+  {
+    name: "Eco Friendly",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Eco%20Friendly.png?updatedAt=1749905154434",
   },
   {
     name: "Ethically Sourced",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Ethically%20Sourced.png?updatedAt=1745918852493",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Ethically%20Sourced.png?updatedAt=1749905154458",
   },
   {
     name: "Authentic Product",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Authentic%20Product.png?updatedAt=1745918853499",
-  },
-  {
-    name: "Sustainable Packaging",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Sustainable%20Packaging.png?updatedAt=1745918854004",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Authentic%20Product.png?updatedAt=1749905156563",
   },
   {
     name: "COD Available",
-    url: "https://ik.imagekit.io/btezpgst5/icons/COD%20Available.png?updatedAt=1745918855776",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/COD%20Available.png?updatedAt=1749905157812",
   },
   {
     name: "Long Lasting Results",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Long%20Lasting%20Results.png?updatedAt=1745918855502",
-  },
-  {
-    name: "Vegan",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Vegan.png?updatedAt=1745918855475",
-  },
-  {
-    name: "Target",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Target.png?updatedAt=1745918855772",
-  },
-  {
-    name: "Rocket",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Rocket.png?updatedAt=1745918855499",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Long%20Lasting%20Results.png?updatedAt=1749905157866",
   },
   {
     name: "100% Money Back Guarantee",
-    url: "https://ik.imagekit.io/btezpgst5/icons/100_%20Money%20Back%20Guarantee.png?updatedAt=1745918856089",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/100_%20Money%20Back%20Guarantee.png?updatedAt=1749905157784",
   },
   {
-    name: "As Seen On",
-    url: "https://ik.imagekit.io/btezpgst5/icons/As%20Seen%20On.png?updatedAt=1745918856890",
+    name: "Sustainable Packaging",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Sustainable%20Packaging.png?updatedAt=1749905157856",
   },
   {
     name: "ISO Certified",
-    url: "https://ik.imagekit.io/btezpgst5/icons/ISO%20Certified.png?updatedAt=1745918856828",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/ISO%20Certified.png?updatedAt=1749905157860",
+  },
+  {
+    name: "Target",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Target.png?updatedAt=1749905157910",
+  },
+  {
+    name: "Rocket",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Rocket.png?updatedAt=1749905157983",
+  },
+  {
+    name: "As Seen On",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/As%20Seen%20On.png?updatedAt=1749905158345",
+  },
+  {
+    name: "Vegan",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Vegan.png?updatedAt=1749905158502",
   },
   {
     name: "Packaged with Care",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Packaged%20with%20Care.png?updatedAt=1745918857623",
-  },
-  {
-    name: "Backed by Experts",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Backed%20by%20Experts.png?updatedAt=1745918858226",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Packaged%20with%20Care.png?updatedAt=1749905160280",
   },
   {
     name: "Diamond",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Diamond.png?updatedAt=1745918859525",
-  },
-  {
-    name: "Fast Delivery",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Fast%20Delivery.png?updatedAt=1745918859582",
-  },
-  {
-    name: "Free Shipping",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Free%20Shipping.png?updatedAt=1745918859591",
-  },
-  {
-    name: "Over X Happy Customers",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Over%20X%20Happy%20Customers.png?updatedAt=1745918860076",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Diamond.png?updatedAt=1749905161431",
   },
   {
     name: "Dermatologically Tested",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Dermatologically%20Tested.png?updatedAt=1745918860079",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Dermatologically%20Tested.png?updatedAt=1749905161454",
   },
   {
     name: "Community Favourite",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Community%20Favourite.png?updatedAt=1745918860105",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Community%20Favourite.png?updatedAt=1749905161514",
   },
   {
-    name: "Magnifying Glass",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Magnifying%20Glass.png?updatedAt=1745918860607",
+    name: "Over X Happy Customers",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Over%20X%20Happy%20Customers.png?updatedAt=1749905161555",
+  },
+  {
+    name: "Backed by Experts",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Backed%20by%20Experts.png?updatedAt=1749905161587",
+  },
+  {
+    name: "Free Shipping",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Free%20Shipping.png?updatedAt=1749905161613",
   },
   {
     name: "Easy Return",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Easy%20Return.png?updatedAt=1745918861405",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Easy%20Return.png?updatedAt=1749905161910",
   },
   {
-    name: "Puzzle Piece",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Puzzle%20Piece.png?updatedAt=1745918861801",
+    name: "Magnifying Glass",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Magnifying%20Glass.png?updatedAt=1749905161956",
+  },
+  {
+    name: "Fast Delivery",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Fast%20Delivery.png?updatedAt=1749905162038",
   },
   {
     name: "Love",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Love.png?updatedAt=1745918861976",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Love.png?updatedAt=1749905163705",
   },
   {
-    name: "Secure Payment",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Secure%20Payment.png?updatedAt=1745918863236",
+    name: "Puzzle Piece",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Puzzle%20Piece.png?updatedAt=1749905164520",
   },
   {
     name: "Loop",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Loop.png?updatedAt=1745918863751",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Loop.png?updatedAt=1749905164562",
   },
   {
-    name: "Recyclable Materials",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Recyclable%20Materials.png?updatedAt=1745918863813",
+    name: "Secure Payment",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Secure%20Payment.png?updatedAt=1749905164661",
   },
   {
     name: "Lightbulb",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Lightbulb.png?updatedAt=1745918863990",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Lightbulb.png?updatedAt=1749905164725",
   },
   {
     name: "Quality Certified",
-    url: "https://ik.imagekit.io/btezpgst5/icons/Quality%20Certified.png?updatedAt=1745918864234",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Quality%20Certified.png?updatedAt=1749905164742",
+  },
+  {
+    name: "Recyclable Materials",
+    url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Recyclable%20Materials.png?updatedAt=1749905165156",
   },
 ];
 
