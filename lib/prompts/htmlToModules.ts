@@ -3,7 +3,7 @@
  * Prompt functions for html-to-modules API
  * These prompts handle HTML section analysis and module classification
  * ALL PROMPTS ARE EXTRACTED AS-IS FROM ORIGINAL CODE WITHOUT MODIFICATIONS
- */
+ */ 
 
 interface HtmlToModulesData {
   cleanHtml: string;

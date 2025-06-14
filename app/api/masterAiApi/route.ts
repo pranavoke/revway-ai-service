@@ -508,6 +508,8 @@ export async function POST(request: NextRequest) {
       `   📦 Landing Page Sections: ${landingPageResponse.modulesBySection.length}`
     );
     console.log(`   📦 Enhanced Sections: ${enhancedResponse.sections.length}`);
+    console.log(`   📦 Enhanced Sections: ${JSON.stringify(enhancedResponse)}`);
+
     console.log(`⏰ Request completed at: ${new Date().toISOString()}`);
 
     return NextResponse.json(enhancedResponse);
