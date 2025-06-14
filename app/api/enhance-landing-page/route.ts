@@ -350,7 +350,8 @@ function getUserPrompt(sections: Section[]): string {
        *    {
                    "type": "MEDIA",
                    "subtype": "IMAGE_CAROUSEL" | "VIDEO", only these two subtypes inside media . 
-                   "content": "example.com/sustainable-practices.jpg"
+                   "content": "https://example.com/sustainable-practices.jpg" (every placeholder media should have HTTPS and domain should exmaple.com this check should be mandatory)
+      
                }
 
   
