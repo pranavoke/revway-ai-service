@@ -512,6 +512,38 @@ export async function POST(request: NextRequest) {
 
     console.log(`⏰ Request completed at: ${new Date().toISOString()}`);
 
+    // Process response to replace example.com URLs with null
+    const processResponse = (sections: any[]) => {
+      return sections.map((section) => {
+        if (section.modules) {
+          section.modules = section.modules.map((module: any) => {
+            if (module.type === "MEDIA" && module.mediaList) {
+              module.mediaList = module.mediaList.map((media: any) => {
+                if (media.url && media.url.includes("example.com")) {
+                  media.url = null;
+                }
+                return media;
+              });
+            }
+
+            if (module.type === "LIST" && module.bulletPoints) {
+              module.bulletPoints = module.bulletPoints.map((point: any) => {
+                if (point.icon && point.icon.includes("example.com")) {
+                  point.icon = null;
+                }
+                return point;
+              });
+            }
+            return module;
+          });
+        }
+        return section;
+      });
+    };
+
+    // Process the enhanced response
+    enhancedResponse.sections = processResponse(enhancedResponse.sections);
+
     return NextResponse.json(enhancedResponse);
   } catch (error) {
     console.error(`💥 ========== MASTER API FATAL ERROR ==========`);

@@ -451,7 +451,7 @@ json
   
   CRITICAL REQUIREMENTS:
   1. Do NOT modify the intro section in any way
-  2. Convert ALL simple header+text combinations (except intro) to enhanced formats
+  2. Always return valid JSON without markdown formatting
   3. **ENFORCE MODULE VARIETY**: Each section must use different module combinations
   4. **MANDATORY**: Include MEDIA modules in at least 50% of sections (3-4 sections minimum)
   5. **AVOID REPETITION**: Don't use the same LIST subtype in consecutive sections
@@ -460,10 +460,10 @@ json
   8. Maintain section count between 6-8
   9. Preserve all original product information and key messaging
   10. Focus on conversion optimization and visual engagement
-  11. Always return valid JSON without markdown formatting
+ 
   
   **MODULE VARIETY REQUIREMENTS**:
-  - Alternate between different formats across sections it should be like bullet points only or mostly text or every section is a table there should be uniformity `;
+  - Alternate between different formats across sections it should be like bullet points only or mostly paragraph modules or every section is a table there should be uniformity `;
 }
 
 // Helper function to clean and parse JSON response
