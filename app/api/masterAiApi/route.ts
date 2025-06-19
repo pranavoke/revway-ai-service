@@ -538,7 +538,9 @@ export async function POST(request: NextRequest) {
                 module.mediaList
               );
               module.mediaList = module.mediaList.map((media: any) => {
+                // Check both url and link properties
                 media.url = checkAndReplaceUrl(media.url);
+                media.link = checkAndReplaceUrl(media.link);
                 return media;
               });
             }
@@ -557,6 +559,9 @@ export async function POST(request: NextRequest) {
             // Check for any nested URLs in the module itself
             if (module.url) {
               module.url = checkAndReplaceUrl(module.url);
+            }
+            if (module.link) {
+              module.link = checkAndReplaceUrl(module.link);
             }
             if (module.imageUrl) {
               module.imageUrl = checkAndReplaceUrl(module.imageUrl);
