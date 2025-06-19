@@ -514,26 +514,57 @@ export async function POST(request: NextRequest) {
 
     // Process response to replace example.com URLs with null
     const processResponse = (sections: any[]) => {
+      console.log("Processing sections:", JSON.stringify(sections, null, 2));
+
+      const checkAndReplaceUrl = (url: string | null) => {
+        if (
+          url &&
+          (url.includes("example.com") || url.includes("example.co"))
+        ) {
+          console.log("Found example URL, replacing:", url);
+          return null;
+        }
+        return url;
+      };
+
       return sections.map((section) => {
         if (section.modules) {
           section.modules = section.modules.map((module: any) => {
+            console.log("Processing module:", module.type);
+
             if (module.type === "MEDIA" && module.mediaList) {
+              console.log(
+                "Processing MEDIA module mediaList:",
+                module.mediaList
+              );
               module.mediaList = module.mediaList.map((media: any) => {
-                if (media.url && media.url.includes("example.com")) {
-                  media.url = null;
-                }
+                media.url = checkAndReplaceUrl(media.url);
                 return media;
               });
             }
 
             if (module.type === "LIST" && module.bulletPoints) {
+              console.log(
+                "Processing LIST module bulletPoints:",
+                module.bulletPoints
+              );
               module.bulletPoints = module.bulletPoints.map((point: any) => {
-                if (point.icon && point.icon.includes("example.com")) {
-                  point.icon = null;
-                }
+                point.icon = checkAndReplaceUrl(point.icon);
                 return point;
               });
             }
+
+            // Check for any nested URLs in the module itself
+            if (module.url) {
+              module.url = checkAndReplaceUrl(module.url);
+            }
+            if (module.imageUrl) {
+              module.imageUrl = checkAndReplaceUrl(module.imageUrl);
+            }
+            if (module.icon) {
+              module.icon = checkAndReplaceUrl(module.icon);
+            }
+
             return module;
           });
         }
@@ -542,7 +573,15 @@ export async function POST(request: NextRequest) {
     };
 
     // Process the enhanced response
+    console.log(
+      "Original response:",
+      JSON.stringify(enhancedResponse, null, 2)
+    );
     enhancedResponse.sections = processResponse(enhancedResponse.sections);
+    console.log(
+      "Processed response:",
+      JSON.stringify(enhancedResponse, null, 2)
+    );
 
     return NextResponse.json(enhancedResponse);
   } catch (error) {
