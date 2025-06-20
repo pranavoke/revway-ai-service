@@ -51,9 +51,23 @@ interface ProductSections {
  */
 export function getMasterLandingPagePrompt(
   mainProduct: MainProduct,
-  sections: ProductSections
+  sections: ProductSections,
+  extraPrompt?: string,
+  adStory?: string
 ): string {
-  let prompt = `Create a comprehensive landing page for the product "${mainProduct.title}".
+  let prompt = `Create a comprehensive landing page for the product "${mainProduct.title}".`;
+
+  // Add user's custom instructions if provided
+  if (extraPrompt) {
+    prompt += `\n\nCustom Instructions: ${extraPrompt}`;
+  }
+
+  // Add ad story if provided
+  if (adStory) {
+    prompt += `\n\nAd Story: ${adStory}`;
+  }
+
+  prompt += `
   
   MAIN PRODUCT DETAILS:
   - Title: ${mainProduct.title}

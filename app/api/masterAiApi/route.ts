@@ -75,12 +75,19 @@ interface MasterApiResponse {
  * EXACT IMPLEMENTATION from original code - no modifications
  */
 function convertProductSectionsToPrompt(
-  productSections: GenerateProductSectionsResponse
+  productSections: GenerateProductSectionsResponse,
+  extraPrompt?: string,
+  adStory?: string
 ): string {
   const { mainProduct, sections } = productSections;
 
-  // Use the exact prompt function from masterApi.ts
-  return getMasterLandingPagePrompt(mainProduct, sections);
+  // Use the exact prompt function from masterApi.ts with additional parameters
+  return getMasterLandingPagePrompt(
+    mainProduct,
+    sections,
+    extraPrompt,
+    adStory
+  );
 }
 
 /**
@@ -104,7 +111,7 @@ async function callGenerateProductSections(
         },
         body: JSON.stringify({
           productUrl,
-          prompt,
+          additionalPrompt: prompt,
         }),
       }
     );
@@ -431,7 +438,9 @@ export async function POST(request: NextRequest) {
     // Step 2: Convert product sections data to landing page prompt using prompt function
     console.log(`\n🔄 ========== CONVERTING TO LANDING PAGE PROMPT ==========`);
     const landingPagePrompt = convertProductSectionsToPrompt(
-      productSectionsResponse
+      productSectionsResponse,
+      prompt,
+      adStory
     );
     console.log(
       `📝 Generated prompt length: ${landingPagePrompt.length} characters`
