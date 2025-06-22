@@ -449,35 +449,64 @@ function ensureShopNowModule(
     moduleCounts: Record<string, number>;
     modules: any[];
   }>,
-  productUrl: string
-) {
-  const exists = sections.some((section) =>
-    section.modules.some(
-      (module: any) => module.type === "TEXT" && module.subtype === "SHOP_NOW"
-    )
-  );
-
-  if (!exists && sections.length > 0) {
-    const targetIndex =
-      sections.length >= 3 ? sections.length - 3 : sections.length - 1;
-    const targetSection = sections[targetIndex];
-
-    const fallbackShopNowModule = {
-      type: "TEXT",
-      subtype: "SHOP_NOW",
-      content: null,
-      products: [productUrl],
-    } as const;
-
-    targetSection.modules.push(fallbackShopNowModule);
-    targetSection.totalModules += 1;
-    targetSection.moduleCounts["TEXT"] =
-      (targetSection.moduleCounts["TEXT"] || 0) + 1;
-
-    console.log(
-      `🛠️ Fallback SHOP_NOW module added to section "${targetSection.sectionTitle}" (post-enhancement)`
-    );
+  mainProduct: {
+    id: number;
+    title: string;
+    description: string;
+    productUrl: string;
+    imageUrl: string;
+    finalPrice: number;
+    totalRating: number;
   }
+) {
+  let foundSectionIndex: number | null = null;
+
+  // 1. Locate and remove existing SHOP_NOW modules (if any)
+  sections.forEach((section, idx) => {
+    const initialLen = section.modules.length;
+    section.modules = section.modules.filter(
+      (module: any) =>
+        !(module.type === "TEXT" && module.subtype === "SHOP_NOW")
+    );
+
+    const removed = initialLen - section.modules.length;
+    if (removed > 0) {
+      // Adjust counts when we remove existing modules
+      section.totalModules -= removed;
+      section.moduleCounts["TEXT"] = Math.max(
+        (section.moduleCounts["TEXT"] || 0) - removed,
+        0
+      );
+      if (foundSectionIndex === null) foundSectionIndex = idx;
+    }
+  });
+
+  // 2. Decide where to place the fallback module
+  let targetIndex: number;
+  if (foundSectionIndex !== null) {
+    targetIndex = foundSectionIndex; // replace in same section you removed from
+  } else {
+    targetIndex =
+      sections.length >= 3 ? sections.length - 3 : sections.length - 1;
+  }
+
+  const targetSection = sections[targetIndex];
+
+  const fallbackShopNowModule = {
+    type: "TEXT",
+    subtype: "SHOP_NOW",
+    content: null,
+    products: [mainProduct],
+  } as const;
+
+  targetSection.modules.push(fallbackShopNowModule);
+  targetSection.totalModules += 1;
+  targetSection.moduleCounts["TEXT"] =
+    (targetSection.moduleCounts["TEXT"] || 0) + 1;
+
+  console.log(
+    `🛠️ Fallback SHOP_NOW module ensured in section "${targetSection.sectionTitle}"`
+  );
 }
 
 /**
@@ -637,7 +666,7 @@ export async function POST(request: NextRequest) {
       );
       ensureShopNowModule(
         combinedSections,
-        productSectionsResponse.mainProduct.productUrl
+        productSectionsResponse.mainProduct
       );
 
       return NextResponse.json({
@@ -654,7 +683,7 @@ export async function POST(request: NextRequest) {
     // Ensure fallback SHOP_NOW module after enhancement
     ensureShopNowModule(
       enhancedResponse.sections,
-      productSectionsResponse.mainProduct.productUrl
+      productSectionsResponse.mainProduct
     );
 
     // Step 7: Return enhanced response
