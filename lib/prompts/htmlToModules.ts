@@ -131,7 +131,7 @@ json
   
   Return JSON with the following structure:
 {
-  "section": [modules_array]
+  "modules": [modules_array]
 }
   
   `,

@@ -57,8 +57,7 @@ interface Module {
 // Updated to match Master API structure exactly
 interface SectionResponse {
   sectionTitle: string;
-
-  section: any[];
+  modules: any[];
 }
 
 interface RequestBody {
@@ -119,7 +118,7 @@ export async function POST(req: NextRequest) {
         const processedSection = {
           ...section!,
           sectionTitle: key,
-          section: section!.section.map((module: any) => {
+          modules: section!.modules.map((module: any) => {
             // If module has mediaList, fix the URLs
             if (module.type === "MEDIA" && module.mediaList) {
               return {
@@ -227,8 +226,7 @@ async function processSections(
           // Convert to Master API format
           result[sectionKey] = {
             sectionTitle: sectionKey,
-
-            section: processedSection.section,
+            modules: processedSection.modules,
           };
           console.log(`Successfully processed section: ${sectionKey}`);
         } else {
@@ -325,7 +323,7 @@ async function autoDiscoverSections(
 
           result[sectionName] = {
             sectionTitle: sectionName,
-            section: processedSection.section,
+            modules: processedSection.modules,
           };
           console.log(`Successfully processed section: ${sectionName}`);
         } else {
