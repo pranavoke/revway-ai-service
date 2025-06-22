@@ -57,9 +57,8 @@ interface Module {
 // Updated to match Master API structure exactly
 interface SectionResponse {
   sectionTitle: string;
-  totalModules: number;
-  moduleCounts: Record<string, number>;
-  modules: Module[];
+
+  section: any[];
 }
 
 interface RequestBody {
@@ -115,10 +114,27 @@ export async function POST(req: NextRequest) {
     // Return in Master API format - array of sections
     const sectionsArray = Object.entries(processedSections)
       .filter(([_, section]) => section !== null)
-      .map(([key, section]) => ({
-        ...section!,
-        sectionTitle: key,
-      }));
+      .map(([key, section]) => {
+        // Process each section to fix image URLs
+        const processedSection = {
+          ...section!,
+          sectionTitle: key,
+          section: section!.section.map((module: any) => {
+            // If module has mediaList, fix the URLs
+            if (module.type === "MEDIA" && module.mediaList) {
+              return {
+                ...module,
+                mediaList: module.mediaList.map((media: any) => ({
+                  ...media,
+                  link: media.link ? fixImageUrl(media.link) : media.link,
+                })),
+              };
+            }
+            return module;
+          }),
+        };
+        return processedSection;
+      });
 
     return NextResponse.json({
       success: true,
@@ -175,18 +191,24 @@ async function processSections(
   const result: Record<string, SectionResponse | null> = {};
 
   // Log all available section IDs for debugging
-  console.log("Available Shopify sections:");
+  console.log("\n=== Available Shopify Sections ===");
   $(".shopify-section").each((i, el) => {
-    console.log($(el).attr("id"));
+    console.log(`Section ${i + 1}:`, $(el).attr("id"));
   });
+  console.log("================================\n");
 
   // Process each section defined in the map
+  console.log("\n=== Processing Sections with Template Map ===");
+  console.log("Template Map:", JSON.stringify(sectionTemplateMap, null, 2));
+
   for (const [sectionKey, templateId] of Object.entries(sectionTemplateMap)) {
     try {
+      console.log(`\nProcessing section: ${sectionKey}`);
       // Convert the templateId to an ID selector if it doesn't already have the # prefix
       const selector = templateId.startsWith("#")
         ? templateId
         : `#${templateId}`;
+      console.log("Using selector:", selector);
 
       // Extract the section using the ID selector
       const sectionElement = $(selector);
@@ -197,15 +219,16 @@ async function processSections(
         const sectionHtml = sectionElement.html();
 
         if (sectionHtml) {
+          console.log(`Section HTML length: ${sectionHtml.length} characters`);
           // Process the HTML through the module classification system
+          console.log("Classifying section into modules...");
           const processedSection = await classifyIntoModules(sectionHtml);
 
           // Convert to Master API format
           result[sectionKey] = {
             sectionTitle: sectionKey,
-            totalModules: processedSection.totalModules,
-            moduleCounts: processedSection.moduleCounts,
-            modules: processedSection.modules,
+
+            section: processedSection.section,
           };
           console.log(`Successfully processed section: ${sectionKey}`);
         } else {
@@ -224,6 +247,18 @@ async function processSections(
     }
   }
 
+  console.log("\n=== Section Processing Summary ===");
+  console.log("Total sections processed:", Object.keys(result).length);
+  console.log(
+    "Successfully processed sections:",
+    Object.keys(result).filter((key) => result[key] !== null).length
+  );
+  console.log(
+    "Failed sections:",
+    Object.keys(result).filter((key) => result[key] === null).length
+  );
+  console.log("================================\n");
+
   return result;
 }
 
@@ -236,6 +271,7 @@ async function autoDiscoverSections(
 
   // Find all Shopify sections in the document
   const sections = $(".shopify-section");
+  console.log(`\n=== Auto-Discovering Sections ===`);
   console.log(`Found ${sections.length} Shopify sections`);
 
   // Process each section one by one
@@ -246,6 +282,9 @@ async function autoDiscoverSections(
 
     if (sectionId) {
       try {
+        console.log(`\nProcessing section ${i + 1}/${sections.length}`);
+        console.log(`Section ID: ${sectionId}`);
+
         // Get the HTML content for this section
         const sectionHtml = sectionElement.html();
 
@@ -259,6 +298,7 @@ async function autoDiscoverSections(
           );
           if (commentMatch && commentMatch[1]) {
             sectionName = commentMatch[1].trim();
+            console.log(`Found section name in comments: ${sectionName}`);
           } else {
             // Try to extract a meaningful name from classes
             const classList = sectionElement
@@ -271,21 +311,21 @@ async function autoDiscoverSections(
               );
               if (classMatch && classMatch[1]) {
                 sectionName = classMatch[1];
+                console.log(`Found section name in classes: ${sectionName}`);
               }
             }
           }
 
-          console.log(`Processing section: ${sectionName}`);
+          console.log(`Processing section content: ${sectionName}`);
+          console.log(`Section HTML length: ${sectionHtml.length} characters`);
 
           // Process the HTML through the module classification system
+          console.log("Classifying section into modules...");
           const processedSection = await classifyIntoModules(sectionHtml);
 
-          // Convert to Master API format
           result[sectionName] = {
             sectionTitle: sectionName,
-            totalModules: processedSection.totalModules,
-            moduleCounts: processedSection.moduleCounts,
-            modules: processedSection.modules,
+            section: processedSection.section,
           };
           console.log(`Successfully processed section: ${sectionName}`);
         } else {
@@ -299,20 +339,17 @@ async function autoDiscoverSections(
     }
   }
 
+  console.log("\n=== Auto-Discovery Summary ===");
+  console.log("Total sections found:", sections.length);
+  console.log("Successfully processed sections:", Object.keys(result).length);
+  console.log("Failed sections:", sections.length - Object.keys(result).length);
+  console.log("============================\n");
+
   return result;
 }
 
-// Updated response interface to match internal processing
-interface InternalModuleResponse {
-  totalModules: number;
-  moduleCounts: Record<string, number>;
-  modules: Module[];
-}
-
 // Function to classify HTML into modules using prompt functions and OpenAI
-async function classifyIntoModules(
-  html: string
-): Promise<InternalModuleResponse> {
+async function classifyIntoModules(html: string): Promise<any> {
   // Clean the HTML for processing
   const $ = cheerio.load(html);
 
@@ -326,72 +363,63 @@ async function classifyIntoModules(
     cleanHtml,
   });
 
-  try {
-    const processingTimeout = 30000;
+  // Log the prompts being used
+  console.log("\n=== HTML to Modules Classification Prompts ===");
+  console.log("System Prompt:", systemPrompt);
+  console.log("User Prompt:", userPrompt);
+  console.log("==========================================\n");
 
-    const timeoutPromise = new Promise<InternalModuleResponse>((_, reject) => {
-      setTimeout(
-        () => reject(new Error("Language model request timed out")),
-        processingTimeout
-      );
+  try {
+    const processingPromise = new Promise<any>(async (resolve, reject) => {
+      try {
+        console.log("Making OpenAI API request...");
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        });
+
+        const content = response.choices[0].message.content;
+
+        if (!content) {
+          console.error("Received empty response from OpenAI");
+          reject(new Error("Empty response from language model"));
+          return;
+        }
+
+        console.log("\n=== OpenAI API Response ===");
+        console.log("Raw response:", content);
+        console.log("===========================\n");
+
+        try {
+          const parsed = JSON.parse(content) as any;
+
+          resolve({
+            ...parsed,
+          });
+        } catch (e) {
+          console.error("Error parsing OpenAI response:", e);
+          reject(e);
+        }
+      } catch (error: any) {
+        console.error("OpenAI API Error:", error);
+        reject(new Error(`Error calling language model: ${error.message}`));
+      }
     });
 
-    const processingPromise = new Promise<InternalModuleResponse>(
-      async (resolve, reject) => {
-        try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0.1, // Low temperature for more deterministic results
-            response_format: { type: "json_object" }, // Ensure response is valid JSON
-          });
-
-          const content = response.choices[0].message.content;
-
-          if (!content) {
-            reject(new Error("Empty response from language model"));
-            return;
-          }
-
-          try {
-            const parsed = JSON.parse(content) as InternalModuleResponse;
-            // If the response somehow lacks a modules array, create an empty one to avoid runtime errors
-            if (!Array.isArray(parsed.modules)) {
-              parsed.modules = [];
-            }
-
-            // Normalize the modules to ensure proper field structure
-            const normalizedModules = parsed.modules.map(normalizeModule);
-
-            resolve({
-              ...parsed,
-              modules: normalizedModules,
-            });
-          } catch (e) {
-            reject(e);
-          }
-        } catch (error: any) {
-          reject(new Error(`Error calling language model: ${error.message}`));
-        }
-      }
-    );
-
-    // Race the processing against the timeout
-    return Promise.race([processingPromise, timeoutPromise]);
+    return processingPromise;
   } catch (error: any) {
     console.error("Error classifying modules:", error);
 
-    // Return a fallback response in case of error
     return {
-      totalModules: 0,
-      moduleCounts: {},
-      modules: [],
+      section: [],
     };
   }
 }
@@ -405,10 +433,9 @@ function fixImageUrl(url: string): string {
     return `https:${url}`;
   }
 
-  // Check if URL starts with / (relative to domain) - though less common in your case
   if (url.startsWith("/") && !url.startsWith("//")) {
     // You might need to add your domain here if needed
-    return url; // Keep as is for now, or add domain if needed
+    return url;
   }
 
   // If URL already has protocol, return as is
@@ -427,87 +454,4 @@ function fixMediaUrls(mediaList: any[]): any[] {
     url: media.url ? fixImageUrl(media.url) : media.url,
     thumbnail: media.thumbnail ? fixImageUrl(media.thumbnail) : media.thumbnail,
   }));
-}
-
-// Function to normalize modules to Master API structure
-function normalizeModule(module: any): Module {
-  const normalized: Module = {
-    type: module.type,
-    subtype: module.subtype,
-  };
-
-  // Handle different module types with proper field mapping
-  switch (module.type) {
-    case "TEXT":
-      normalized.content = module.content;
-      break;
-
-    case "LIST":
-      // Ensure bulletPoints structure matches Master API
-      if (module.bulletPoints) {
-        normalized.bulletPoints = module.bulletPoints;
-      } else if (module.content) {
-        // Convert old content format to new bulletPoints format
-        normalized.bulletPoints = Array.isArray(module.content)
-          ? module.content.map((item: any) =>
-              typeof item === "string"
-                ? { point: item, supportingText: null }
-                : item
-            )
-          : [{ point: module.content, supportingText: null }];
-      }
-      break;
-
-    case "TESTIMONIAL":
-      // Ensure testimonials structure matches Master API
-      if (module.testimonials) {
-        normalized.testimonials = module.testimonials;
-      } else if (module.content) {
-        // Convert old content format to new testimonials format
-        normalized.testimonials = [
-          {
-            subject:
-              module.content.quote?.substring(0, 50) || "Customer Review",
-            body: module.content.quote || module.content.body || "",
-            reviewerName:
-              module.content.author ||
-              module.content.reviewerName ||
-              "Anonymous",
-            rating: module.content.rating || 5,
-          },
-        ];
-      }
-      break;
-
-    case "MEDIA":
-      // Ensure mediaList structure matches Master API and fix image URLs
-      if (module.mediaList) {
-        normalized.mediaList = fixMediaUrls(module.mediaList);
-      } else if (module.content) {
-        // Convert old content format to new mediaList format and fix URLs
-        const mediaArray = Array.isArray(module.content)
-          ? module.content
-          : [module.content];
-        normalized.mediaList = fixMediaUrls(mediaArray);
-      }
-      break;
-
-    case "TABLE":
-      // Ensure table structure matches Master API
-      if (module.table) {
-        normalized.table = module.table;
-      } else if (module.content) {
-        // Convert old content format to new table format
-        if (module.content.headers && module.content.rows) {
-          normalized.table = [module.content.headers, ...module.content.rows];
-        }
-      }
-      break;
-
-    default:
-      // For any other types, keep the content field
-      normalized.content = module.content;
-  }
-
-  return normalized;
 }

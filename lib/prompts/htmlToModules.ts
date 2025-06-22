@@ -1,19 +1,7 @@
-// lib/prompts/htmlToModules.ts
-/**
- * Prompt functions for html-to-modules API
- * These prompts handle HTML section analysis and module classification
- * ALL PROMPTS ARE EXTRACTED AS-IS FROM ORIGINAL CODE WITHOUT MODIFICATIONS
- */ 
-
 interface HtmlToModulesData {
   cleanHtml: string;
 }
 
-/**
- * EXACT prompt from html-to-modules API for classifying HTML into modules
- * Returns system and user prompts for HTML analysis and module generation
- * Updated to match Master API module structure exactly
- */
 export function getHtmlToModulesClassificationPrompt(data: HtmlToModulesData): {
   systemPrompt: string;
   userPrompt: string;
@@ -34,11 +22,6 @@ export function getHtmlToModulesClassificationPrompt(data: HtmlToModulesData): {
   HEADER: Usually Section Opener .
   SUB_HEADER: Secondary title text
   PARAGRAPH: Standard paragraph text
-  CTA: Call to Action buttons or links
-  SHOP_NOW: Shopping-specific call to action
-  PAGE_HEADER: Main page title
-  BANNER: Banner text, typically prominent
-  
   
   MEDIA Modules
   
@@ -83,32 +66,20 @@ export function getHtmlToModulesClassificationPrompt(data: HtmlToModulesData): {
 json
 {
   "type": "TEXT",
-  "subtype": "HEADER" | "SUB_HEADER" | "PARAGRAPH" |
-CTA |
-SHOP_NOW  |
-PAGE_HEADER |
-BANNER |",
+  "subtype": "HEADER" | "SUB_HEADER" | "PARAGRAPH"",
   "content": "string content here" // null for PAIR_IT_WITH and GRID subtypes
 }
-When subtype is PAIR_IT_WITH or GRID, add:
-json
-{
-  "type": "TEXT",
-  "subtype": "PAIR_IT_WITH",
-  "content": null,
-  "products": [{ single product object multiple product in grid }]
-}
+
 2. LIST Modules
 json
 {
   "type": "LIST",
-  "subtype": "BULLET_POINTS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT | BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS   | BULLET_POINTS_WITH_ICONS       * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES  |     * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2 
-",
+  "subtype": "BULLET_POINTS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT",
   "bulletPoints": [
     {
       "point": "Main text",
       "supportingText": "" 
-	 “Icon”: “”// Empty string for simple bullets
+	   “Icon”: “”// Empty string for simple bullets
     }
   ]
 }
@@ -155,6 +126,14 @@ json
       6. For testimonials, always include subject, body, reviewerName, and rating fields
       7. For bullet points, always use objects with point and supportingText (can be null)
   
-  HTML : ${data.cleanHtml}`,
+  HTML : ${data.cleanHtml}
+  
+  
+  Return JSON with the following structure:
+{
+  "section": [modules_array]
+}
+  
+  `,
   };
 }
