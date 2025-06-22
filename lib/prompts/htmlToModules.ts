@@ -125,6 +125,7 @@ json
       5. MUST use the correct field names: bulletPoints for LIST, testimonials for TESTIMONIAL, mediaList for MEDIA, table for TABLE
       6. For testimonials, always include subject, body, reviewerName, and rating fields
       7. For bullet points, always use objects with point and supportingText (can be null)
+      8. Always Create a Header module for the section , section title and header is seperate . 
   
   HTML : ${data.cleanHtml}
   

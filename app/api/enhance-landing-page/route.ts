@@ -391,7 +391,7 @@ ${adStory ? `Ad Story: ${adStory}` : ""}
 ${productUrl ? `Product URL: ${productUrl}` : ""}
 
 CRITICAL THEME INTEGRATION:
-- Extract key themes from the original context (e.g., Women's Day, target audience, specific messaging)
+- Extract key themes from the original context Ad Story
 - Weave these themes naturally into section headers, content, and testimonials
 - Ensure the enhanced landing page reflects the original campaign intent
 - Maintain consistency with the specified target audience and occasion
