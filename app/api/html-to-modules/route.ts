@@ -363,6 +363,10 @@ async function classifyIntoModules(
 
           try {
             const parsed = JSON.parse(content) as InternalModuleResponse;
+            // If the response somehow lacks a modules array, create an empty one to avoid runtime errors
+            if (!Array.isArray(parsed.modules)) {
+              parsed.modules = [];
+            }
 
             // Normalize the modules to ensure proper field structure
             const normalizedModules = parsed.modules.map(normalizeModule);
@@ -372,9 +376,7 @@ async function classifyIntoModules(
               modules: normalizedModules,
             });
           } catch (e) {
-            reject(
-              new Error("Failed to parse JSON from language model response")
-            );
+            reject(e);
           }
         } catch (error: any) {
           reject(new Error(`Error calling language model: ${error.message}`));
