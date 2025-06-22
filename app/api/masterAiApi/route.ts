@@ -441,6 +441,45 @@ function combineSections(
   return combinedSections;
 }
 
+// NEW HELPER: Ensure a fallback SHOP_NOW module exists after all processing
+function ensureShopNowModule(
+  sections: Array<{
+    sectionTitle: string;
+    totalModules: number;
+    moduleCounts: Record<string, number>;
+    modules: any[];
+  }>,
+  productUrl: string
+) {
+  const exists = sections.some((section) =>
+    section.modules.some(
+      (module: any) => module.type === "TEXT" && module.subtype === "SHOP_NOW"
+    )
+  );
+
+  if (!exists && sections.length > 0) {
+    const targetIndex =
+      sections.length >= 3 ? sections.length - 3 : sections.length - 1;
+    const targetSection = sections[targetIndex];
+
+    const fallbackShopNowModule = {
+      type: "TEXT",
+      subtype: "SHOP_NOW",
+      content: null,
+      products: [productUrl],
+    } as const;
+
+    targetSection.modules.push(fallbackShopNowModule);
+    targetSection.totalModules += 1;
+    targetSection.moduleCounts["TEXT"] =
+      (targetSection.moduleCounts["TEXT"] || 0) + 1;
+
+    console.log(
+      `🛠️ Fallback SHOP_NOW module added to section "${targetSection.sectionTitle}" (post-enhancement)`
+    );
+  }
+}
+
 /**
  * Call the enhance-landing-page API
  */
@@ -593,7 +632,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (!enhancedResponse) {
-      console.log(`⚠️ Enhancement failed, returning combined sections`);
+      console.log(
+        `⚠️ Enhancement failed, returning combined sections (with fallback check)`
+      );
+      ensureShopNowModule(
+        combinedSections,
+        productSectionsResponse.mainProduct.productUrl
+      );
+
       return NextResponse.json({
         title: landingPageResponse.title,
         sections: combinedSections,
@@ -603,6 +649,12 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Landing page enhanced successfully`);
     console.log(
       `📊 Enhanced sections count: ${enhancedResponse.sections.length}`
+    );
+
+    // Ensure fallback SHOP_NOW module after enhancement
+    ensureShopNowModule(
+      enhancedResponse.sections,
+      productSectionsResponse.mainProduct.productUrl
     );
 
     // Step 7: Return enhanced response
