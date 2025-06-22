@@ -13,8 +13,6 @@ type TextSubtype =
   | "HEADER"
   | "SUB_HEADER"
   | "PARAGRAPH"
-  | "CTA"
-  | "SHOP_NOW"
   | "PAGE_HEADER"
   | "BANNER";
 
