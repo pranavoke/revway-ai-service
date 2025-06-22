@@ -90,7 +90,11 @@ export async function POST(req: NextRequest) {
 
     if (useAutoDiscovery) {
       console.log("Using auto-discovery to find sections");
-      processedSections = await autoDiscoverSections(htmlContent);
+      const { sectionTemplateMap } = body;
+      processedSections = await autoDiscoverSections(
+        htmlContent,
+        sectionTemplateMap
+      );
     } else {
       const { sectionTemplateMap } = body;
       if (!sectionTemplateMap) {
@@ -262,7 +266,8 @@ async function processSections(
 
 // Function for auto-discovering sections
 async function autoDiscoverSections(
-  htmlContent: string
+  htmlContent: string,
+  sectionTemplateMap?: Record<string, string>
 ): Promise<Record<string, SectionResponse | null>> {
   const $ = cheerio.load(htmlContent);
   const result: Record<string, SectionResponse | null> = {};
@@ -272,6 +277,20 @@ async function autoDiscoverSections(
   console.log(`\n=== Auto-Discovering Sections ===`);
   console.log(`Found ${sections.length} Shopify sections`);
 
+  // If sectionTemplateMap is provided, extract the end portions to match against
+  const templateEndPortions: string[] = [];
+  if (sectionTemplateMap && Object.keys(sectionTemplateMap).length > 0) {
+    console.log("\nExtracting end portions from template map:");
+    Object.values(sectionTemplateMap).forEach((templateId) => {
+      const parts = templateId.split("__");
+      if (parts.length > 1) {
+        const endPortion = parts[parts.length - 1];
+        templateEndPortions.push(endPortion);
+        console.log(`Template ID: ${templateId} -> End portion: ${endPortion}`);
+      }
+    });
+  }
+
   // Process each section one by one
   for (let i = 0; i < sections.length; i++) {
     const section = sections[i];
@@ -279,13 +298,16 @@ async function autoDiscoverSections(
     const sectionId = sectionElement.attr("id");
 
     if (sectionId) {
-      // Check if sectionId contains any of the allowed section types
-      if (
-        sectionId.includes("faq-section") ||
-        sectionId.includes("usage-section") ||
-        sectionId.includes("ingredients-grid") ||
-        sectionId.includes("image-with-accordion")
-      ) {
+      // If templateEndPortions exists and has items, only process matching sections
+      // Otherwise, process all sections (original behavior)
+      const shouldProcessSection =
+        templateEndPortions.length > 0
+          ? templateEndPortions.some((endPortion) =>
+              sectionId.includes(endPortion)
+            )
+          : true;
+
+      if (shouldProcessSection) {
         try {
           console.log(`\nProcessing section ${i + 1}/${sections.length}`);
           console.log(`Section ID: ${sectionId}`);
@@ -343,6 +365,10 @@ async function autoDiscoverSections(
         } catch (error) {
           console.error(`Error processing section ${sectionId}:`, error);
         }
+      } else {
+        console.log(
+          `Skipping section ${sectionId} - does not match any template end portions`
+        );
       }
     }
   }
