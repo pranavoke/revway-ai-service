@@ -227,6 +227,9 @@ interface Section {
 interface EnhanceRequest {
   title: string;
   sections: Section[];
+  originalPrompt?: string;
+  adStory?: string;
+  productUrl?: string;
 }
 
 interface EnhanceResponse {
@@ -234,236 +237,238 @@ interface EnhanceResponse {
   sections: Section[];
 }
 
-// Helper function to generate system prompt
 function getSystemPrompt(): string {
-  return `You are an expert landing page optimizer and content strategist specializing in post-generation enhancement and filtering. Your role is to analyze existing landing page sections and optimize them for maximum conversion and user experience without adding or removing sections.
-  
-  Your core responsibilities:
- - 1 **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged
-  2. **PRESERVE INTRO SECTION STRUCTURE** - Keep intro section exactly as is (header + paragraph format)
-  3. **OPTIMIZE NON-INTRO SECTION STRUCTURE** - Improve how content is organized within all other sections
-  4. **CONVERT TO BETTER FORMATS** - Transform content into more effective module types when appropriate (except intro)
-  5. **MAINTAIN SECTION COUNT** - Keep the total number of sections between 6-8 (if more than 8, consolidate; if less than 6, enhance existing ones)
-  6. **IMPROVE CONTENT QUALITY** - Enhance text, structure, and presentation without changing the core message
-  7. **ADD VISUAL ELEMENTS** - Incorporate relevant icons and images to enhance user engagement
-  
-  Enhanced Bullet Point Types Available:
-  - BULLET_POINTS: Simple bullet points
-  - BULLET_POINTS_WITH_SUPPORTING_TEXT: Bullet points with explanatory text
-  - BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES: Bullet points with text and relevant images
-  - BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS: Bullet points with text and relevant icons
-  - BULLET_POINTS_WITH_ICONS: Icon-only bullet points for key features
-  - BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2: Timeline/process format with icons
-  
-  Icon Library Available:
-  ${ICON_LIBRARY.join(", ")}
-  
-  Key Enhancement Rules:
-  - HEADER MODULE IS COMPULSORY FOR EVERY SECTION 
-  - **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged 
-  - **MODULE VARIETY MANDATORY**: Each section must use different module types/subtypes
-  - **MEDIA MODULES REQUIRED**: Minimum 50% of sections must include IMAGE or IMAGE_CAROUSEL modules
-  - FAQ sections with generic or low-value questions should be restructured as informational content or tables
-  - Repetitive content should be consolidated
-  - Paragraph-heavy sections (except intro) should be broken into digestible formats (bullet points, tables, etc.)
-  - **ELIMINATE ALL SIMPLE Paragraph modules ** (except intro) and convert to enhanced formats
-  
-  - Tables should be used when data can be presented more clearly in tabular format
-  - Add relevant icons from the provided library when enhancing bullet points
-  - Add image placeholders (example.com) for visual context where beneficial using the 'icon' field
-  - **AVOID OVERUSING** BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS (max 2 sections)
-  - Maintain the original section intent while improving presentation
-  - Preserve all product information and key messaging
-  - Focus on conversion optimization and user experience
-  
-  CRITICAL: Use only the 'icon' field for both icons (from library) and images (example.com URLs) in bullet points.`;
-}
+  return `You are a landing page optimization expert. Your task is to enhance existing landing page sections for better conversion and user experience while preserving the original campaign context and themes.
 
-// Helper function to generate user prompt
-function getUserPrompt(sections: Section[]): string {
-  const currentSectionCount = sections.length;
-  const iconList = ICON_LIBRARY.map((icon) => `${icon.name}: ${icon.url}`).join(
-    "\n"
-  );
+CORE RULES:
+1. NEVER modify these section types: INTRO, PAIR_IT_WITH, GRID_COLLECTION
+2. SHOP_NOW MODULE OPTIMIZATION: If multiple SHOP_NOW modules exist, keep only ONE in the most strategic section (preferably after intro/benefits section) and remove all others
+2B. If SHOP_NOW module is not present add one in any of the sections which is appropriate .
+3. PRESERVE ORIGINAL CAMPAIGN CONTEXT: If original prompt or ad story mentions specific themes (like Women's Day, festivals, target audience), incorporate these themes throughout the enhanced content
+4. Maintain 6-8 total sections (consolidate if >8, enhance if <6)
+5. Each section must use different module combinations
+6. Minimum 3 sections must include separate MEDIA modules (not just headers with images)
+7. Every section requires a HEADER module
 
-  return `LANDING PAGE SECTIONS TO ENHANCE:
-  ${JSON.stringify(sections, null, 2)}
-  
-  
-  ICON LIBRARY AVAILABLE (use FULL URLs):
-  ${iconList}
+SECTION STRUCTURE REQUIREMENTS:
+Each section should contain multiple modules working together:
+- HEADER module (mandatory for every section)
+- Primary content module (LIST, TABLE, TESTIMONIAL, etc.)
+- Optional MEDIA module (IMAGE_CAROUSEL or VIDEO) - required in at least 3 sections
+- Optional supporting modules (SUB_HEADER, additional content)
 
-  MOST IMPORTANT RULE PLAY AROUND DIFFERENT SECTIONS
-  - **INTRO SECTION , PAIR_IT_WITH SECTION , GRID_COLLECTION SECTION**: Leave completely unchanged 
-  
-  ENHANCEMENT OBJECTIVES:
-  1. **Section Count Optimization**: Current sections: ${
-    currentSectionCount - 3
-  }
-     - Target: 6-8 sections total (excluding the 3 core sections )
-     - If >8: Consolidate similar/redundant sections
-     - If <6: Enhance existing sections with richer content structure or Create more if required .
-  
-  2. **Content Structure Enhancement**:
-     - **PRESERVE INTRO SECTION**: Do not modify the intro section structure, content, or format
-     - Convert FAQ sections with generic questions into structured informational content
-     - Transform data-heavy text into tables bullets where appropriate
-     - IF you want to discard a section and completely create a new section you're open for it 
-     - Ensure each section has a clear, conversion-focused purpose
-     - Want to minimise the usage of SUBTYPE : PARAGRAPH module 
-     - DO NOT CHANGE or even TOUCH INTRO SECTION , PAIR_IT_WITH , AND GRID COLLECTION 
-  
-  3. **Enhanced Module Type Optimization - ENFORCE VARIETY**:
-     - **MANDATORY**: Each section must use DIFFERENT module combinations
-     - **MANDATORY**: At least 50% of sections must include MEDIA modules (IMAGE_CAROUSEL)
-     - **MANDATORY**: Alternate between different LIST subtypes across sections
-     - **MANDATORY**: Keep HEADER Module in every section . 
-     - Use enhanced LIST modules strategically:
-       * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS for trust/benefits 
-       * BULLET_POINTS_WITH_ICONS for quick key points
-       * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES for processes/how-to
-       * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2 for timelines/steps
-       * BULLET_POINTS_WITH_SUPPORTING_TEXT for detailed explanations
-     - Use TABLE modules for comparisons, specifications, ingredient details
-      row limit: 10 , col limit:  2<=col<=3 
-   
+COMPLETE MODULE SPECIFICATIONS:
 
-     - Use TESTIMONIAL modules for social proof
-    
-     - **MANDATORY**: Add MEDIA modules in at least 3-4 sections:
-       * Product demonstration images
-       * Before/after comparison images
-       * Ingredient/process illustrations
-       * Usage scenario images
-  
-  4. **Icon Selection Guidelines (use FULL URLs)**:
-
-  5. **Image Placeholder Guidelines - MANDATORY USAGE**:
-     - **MINIMUM 3-4 sections MUST include MEDIA modules**
-     - Use example.com URLs for image placeholders in the 'icon' field for image-based bullet points
-     - Use FULL icon URLs from library for icon-based bullet points in the 'icon' field
-     - **MANDATORY MEDIA modules for**:
-       * Product demonstration sections (IMAGE_CAROUSEL)
-       * How-to or usage sections (add step-by-step images)
-       * Before/after sections (add comparison images)
-       * Ingredient sections (add ingredient visuals)
-       * Feature explanation sections (add feature illustrations)
-       *    {
-                   "type": "MEDIA",
-                   "subtype": "IMAGE_CAROUSEL" | "VIDEO", only these two subtypes inside media . 
-                   "content": "https://example.com/sustainable-practices.jpg" (every placeholder media should have HTTPS and domain should exmaple.com this check should be mandatory)
-      
-               }
-
-  
-  6. **CRITICAL BULLET POINT STRUCTURE - ALWAYS USE**:
-     Every bullet point MUST have exactly these fields:
-     {
-       "point": "Main text content (always required)",
-       "supportingText": "Additional explanation text or null if not needed",
-       "icon": "Full icon URL from library or example.com image URL or null if not needed"
-     }
-  
-  7. **Quality Filters to Apply**:
-     - Remove or restructure FAQ items that are:
-       * Generic or commonly known information
-       * Already covered in other sections  
-       * Vague or non-specific questions
-       * Questions that don't add purchasing confidence
-       * Overly promotional questions and answers
-     - Keep only 5-8 high-value, unique FAQs that provide genuine purchasing confidence
-     - Consolidate sections that cover similar topics
-     - Enhance weak sections with stronger, more specific content using icons and images
-     Always make it bullet point main type only . 
-  
-  RESPONSE FORMAT:
-  Return the enhanced sections in the exact same structure as input, but with improved content organization, enhanced module types, and visual elements.
-  
-  {
-    "sections": [enhanced_sections_array],
-  
-  }
-
-  Final Module Schema
-1. TEXT Modules
-json
+1. TEXT MODULES:
 {
   "type": "TEXT",
   "subtype": "HEADER" | "SUB_HEADER" | "PARAGRAPH" | "PAIR_IT_WITH" | "GRID",
-  "content": "string content here" // null for PAIR_IT_WITH and GRID subtypes
+  "content": "string content" // null for PAIR_IT_WITH and GRID
 }
-When subtype is PAIR_IT_WITH or GRID, add:
-json
+
+For PAIR_IT_WITH and GRID subtypes:
 {
   "type": "TEXT",
-  "subtype": "PAIR_IT_WITH",
+  "subtype": "PAIR_IT_WITH" | "GRID",
   "content": null,
-  "products": [{ single product object multiple product in grid }]
+  "products": [product_objects]
 }
-2. LIST Modules
-json
+
+For SHOP_NOW subtypes:
+{
+  "type": "TEXT",
+  "subtype": "SHOP_NOW",
+  "content": null,
+  "products": [product_objects] // here orginal product link
+}
+
+2. LIST MODULES (6 variations):
 {
   "type": "LIST",
-  "subtype": "BULLET_POINTS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT | BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS   | BULLET_POINTS_WITH_ICONS       * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES  |     * BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2 
-",
+  "subtype": "BULLET_POINTS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT" | "BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS" | "BULLET_POINTS_WITH_ICONS" | "BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES" | "BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2",
   "bulletPoints": [
     {
-      "point": "Main text",
-      "supportingText": "" 
-	 “Icon”: “”// Empty string for simple bullets
+      "point": "Main bullet text (always required)",
+      "supportingText": "Additional explanation or null",
+      "icon": "ONLY use full URLs from provided icon library OR example.com image URLs OR null"
     }
   ]
 }
-3. TESTIMONIAL Modules
-json
-{
-  "type": "TESTIMONIAL",
-  "subtype": "TESTIMONIAL_1",
-  "testimonials": [
-   {"subject": "Great product!", "body": "I loved using this product, it really helped me a lot.", "reviewerName": "INDIAN NAMES", "rating": 5}
 
-  ]
-}
-4. MEDIA Modules
-json
+LIST Subtype Usage Guidelines:
+- BULLET_POINTS: Simple list items only
+- BULLET_POINTS_WITH_SUPPORTING_TEXT: Main point + detailed explanation
+- BULLET_POINTS_WITH_ICONS: Main point + relevant icon (no supporting text)
+- BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS: Main point + explanation + icon
+- BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES: Main point + explanation + example.com image
+- BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2: Timeline/process format with icons
+
+3. MEDIA MODULES (standalone visual content):
 {
   "type": "MEDIA",
   "subtype": "IMAGE_CAROUSEL" | "VIDEO",
   "mediaList": [
     {
-      "link": "media URL",
+      "link": "https://example.com/image.jpg",
       "extension": "jpg",
       "type": "image"
     }
   ]
 }
-5. TABLE Modules
-json
+
+4. TABLE MODULES:
 {
   "type": "TABLE",
   "subtype": "TABLE_1" | "TABLE_2",
   "table": {
-    "headers": ["Column 1", "Column 2"],
-    "rows": [["Row 1 Col 1", "Row 1 Col 2"]]
+    "headers": ["Column 1", "Column 2", "Column 3"],
+    "rows": [
+      ["Row 1 Col 1", "Row 1 Col 2", "Row 1 Col 3"],
+      ["Row 2 Col 1", "Row 2 Col 2", "Row 2 Col 3"]
+    ]
   }
 }
+Limits: Max 10 rows, 2-3 columns , where TABLE_1 = 3-col table and TABLE_2 = 2-col table
 
-  
-  CRITICAL REQUIREMENTS:
-  1. Do NOT modify the intro section in any way
-  2. Always return valid JSON without markdown formatting
-  3. **ENFORCE MODULE VARIETY**: Each section must use different module combinations
-  4. **MANDATORY**: Include MEDIA modules in at least 50% of sections (3-4 sections minimum)
-  5. **AVOID REPETITION**: Don't use the same LIST subtype in consecutive sections
-  6. **USE FULL ICON URLs** from the provided library OR example.com image URLs in the 'icon' field for bullet points
-  7. **MAINTAIN BULLET STRUCTURE**: Always use point, supportingText, icon fields (set to null if not needed)
-  8. Maintain section count between 6-8
-  9. Preserve all original product information and key messaging
-  10. Focus on conversion optimization and visual engagement
- 
-  
-  **MODULE VARIETY REQUIREMENTS**:
-  - Alternate between different formats across sections it should be like bullet points only or mostly paragraph modules or every section is a table there should be uniformity `;
+5. TESTIMONIAL MODULES:
+{
+  "type": "TESTIMONIAL",
+  "subtype": "TESTIMONIAL_1",
+  "testimonials": [
+    {
+      "subject": "Great product!",
+      "body": "Detailed review text explaining benefits",
+      "reviewerName": "Indian Name",
+      "rating": 5
+    }
+  ]
+}
+
+ENHANCEMENT OBJECTIVES:
+- Convert simple paragraphs to structured formats (bullets, tables, media)
+- Add standalone MEDIA modules to enhance visual appeal
+- Eliminate generic FAQ content
+- Ensure module variety across sections
+- Optimize for conversion
+
+ICON AND IMAGE USAGE:
+- **ICONS**: Use ONLY from the provided icon library (full URLs) - no other icon sources allowed
+- **IMAGES**: Use https://example.com/descriptive-name.jpg for image placeholders only
+- Icons from library go in bullet point 'icon' field
+- Image placeholders go in separate MEDIA modules OR bullet point 'icon' field
+- **RESTRICTION**: Do not use any icons outside the provided ICON_LIBRARY list
+
+Focus on creating visually engaging, conversion-optimized sections with proper module combinations while preserving original messaging and product information.`;
+}
+
+function getUserPrompt(
+  sections: Section[],
+  originalPrompt?: string,
+  adStory?: string,
+  productUrl?: string
+): string {
+  const currentSectionCount = sections.length;
+  const iconList = ICON_LIBRARY.map((icon) => `${icon.name}: ${icon.url}`).join(
+    "\n"
+  );
+
+  // Count SHOP_NOW modules
+  const shopNowCount = sections.reduce((count, section) => {
+    return (
+      count +
+      section.modules.filter(
+        (module) => module.type === "TEXT" && module.subtype === "SHOP_NOW"
+      ).length
+    );
+  }, 0);
+
+  let contextSection = "";
+  if (originalPrompt || adStory) {
+    contextSection = `
+ORIGINAL CAMPAIGN CONTEXT (MUST INCORPORATE):
+${originalPrompt ? `Original Prompt: ${originalPrompt}` : ""}
+${adStory ? `Ad Story: ${adStory}` : ""}
+${productUrl ? `Product URL: ${productUrl}` : ""}
+
+CRITICAL THEME INTEGRATION:
+- Extract key themes from the original context (e.g., Women's Day, target audience, specific messaging)
+- Weave these themes naturally into section headers, content, and testimonials
+- Ensure the enhanced landing page reflects the original campaign intent
+- Maintain consistency with the specified target audience and occasion
+`;
+  }
+
+  return `ENHANCE THESE LANDING PAGE SECTIONS:
+${JSON.stringify(sections, null, 2)}
+${contextSection}
+AVAILABLE ICONS (use ONLY these full URLs - no other icons allowed):
+${iconList}
+
+ICON USAGE RESTRICTION:
+- **MANDATORY**: Use ONLY icons from the above list
+- **NO EXTERNAL ICONS**: Do not use any icon sources outside this provided list
+- **FORMAT**: Always use the complete URL as provided
+
+CRITICAL SHOP_NOW MODULE OPTIMIZATION: Very Important
+- Current SHOP_NOW modules detected: ${shopNowCount}
+- **REQUIREMENT**: Keep only ONE SHOP_NOW module in the most strategic section
+- **STRATEGY**: Place the single SHOP_NOW module in a benefits/features section (not intro, not at the very end)
+- **ACTION**: Remove all other SHOP_NOW modules and replace with appropriate content modules
+
+SPECIFIC REQUIREMENTS:
+1. Current sections: ${currentSectionCount} → Target: 6-8 sections
+2. DO NOT modify: INTRO, PAIR_IT_WITH, GRID_COLLECTION sections
+3. Add standalone MEDIA modules to at least 3 different sections
+4. Use different module combinations for each section
+5. Convert weak FAQs to structured content (tables, enhanced bullets)
+6. Minimize usage of simple PARAGRAPH modules
+
+SECTION ENHANCEMENT STRATEGY:
+Each enhanced section should typically contain:
+- HEADER module (mandatory)
+- Primary content module (LIST/TABLE/TESTIMONIAL)
+- MEDIA module (in at least 3 sections) - standalone visual content
+- Optional SUB_HEADER for additional context
+
+MEDIA MODULE IMPLEMENTATION:
+Add as separate modules within sections, not just icons in bullets:
+{
+  "type": "MEDIA",
+  "subtype": "IMAGE_CAROUSEL",
+  "mediaList": [
+    {
+      "link": "https://example.com/product-demo.jpg",
+      "extension": "jpg",
+      "type": "image"
+    },
+    {
+      "link": "https://example.com/usage-example.jpg", 
+      "extension": "jpg",
+      "type": "image"
+    }
+  ]
+}
+
+BULLET POINT VARIETY USAGE:
+- Use different LIST subtypes across sections
+- Don't repeat the same subtype in consecutive sections
+- Match subtype to content purpose:
+  * Simple features → BULLET_POINTS_WITH_ICONS
+  * Detailed benefits → BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS
+  * Process steps → BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_ICONS_2
+  * How-to guides → BULLET_POINTS_WITH_SUPPORTING_TEXT_AND_IMAGES
+
+QUALITY ENHANCEMENTS:
+- Remove generic FAQ questions
+- Convert data-heavy text to tables
+- Add relevant testimonials with Indian names
+- Use descriptive image placeholders (https://example.com/specific-description.jpg)
+- Ensure each section serves a clear conversion purpose
+
+Return enhanced sections as JSON:
+{
+  "sections": [enhanced_sections_array]
+}`;
 }
 
 // Helper function to clean and parse JSON response
@@ -486,6 +491,33 @@ function cleanAndParseJSON(content: string): any {
   }
 }
 
+// Helper function to clean example.com URLs and set them to null
+function cleanExampleUrls(data: any): any {
+  if (typeof data !== "object" || data === null) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => cleanExampleUrls(item));
+  }
+
+  const cleaned = { ...data };
+
+  for (const key in cleaned) {
+    if (typeof cleaned[key] === "string") {
+      // If the value is a string and contains example.com, set it to null
+      if (cleaned[key].includes("example.com")) {
+        cleaned[key] = null;
+      }
+    } else if (typeof cleaned[key] === "object" && cleaned[key] !== null) {
+      // Recursively clean nested objects and arrays
+      cleaned[key] = cleanExampleUrls(cleaned[key]);
+    }
+  }
+
+  return cleaned;
+}
+
 // Helper function to validate response structure
 function validateResponse(
   response: any,
@@ -494,6 +526,55 @@ function validateResponse(
   if (!response.sections || !Array.isArray(response.sections)) {
     throw new Error("Invalid response: sections array missing");
   }
+
+  // Find protected sections in original sections
+  const protectedSections = originalSections.filter((section) => {
+    // Check if section title contains protected keywords
+    const isIntro = section.sectionTitle.toLowerCase().includes("intro");
+    const isPairItWith = section.sectionTitle
+      .toLowerCase()
+      .includes("pair it with");
+    const isCollection = section.sectionTitle
+      .toLowerCase()
+      .includes("collection");
+
+    return isIntro || isPairItWith || isCollection;
+  });
+
+  // Create a map of protected sections for quick lookup
+  const protectedSectionMap = new Map(
+    protectedSections.map((section) => [section.sectionTitle, section])
+  );
+
+  // Get the intro section
+  const introSection = protectedSections.find((section) =>
+    section.sectionTitle.toLowerCase().includes("intro")
+  );
+
+  // Get non-protected sections from the response
+  const nonProtectedSections = response.sections.filter(
+    (section: Section) => !protectedSectionMap.has(section.sectionTitle)
+  );
+
+  // Get pair it with and collection sections
+  const pairItWithSection = protectedSections.find((section) =>
+    section.sectionTitle.toLowerCase().includes("pair it with")
+  );
+  const collectionSection = protectedSections.find((section) =>
+    section.sectionTitle.toLowerCase().includes("collection")
+  );
+
+  // Reconstruct sections array in the correct order
+  response.sections = [
+    // 1. Intro section (must be first)
+    ...(introSection ? [introSection] : []),
+    // 2. Non-protected sections (including optimized SHOP_NOW sections)
+    ...nonProtectedSections,
+    // 3. Pair it with section
+    ...(pairItWithSection ? [pairItWithSection] : []),
+    // 4. Collection section
+    ...(collectionSection ? [collectionSection] : []),
+  ];
 
   return response as EnhanceResponse;
 }
@@ -544,7 +625,12 @@ export async function POST(request: NextRequest) {
 
     // Generate prompts
     const systemPrompt = getSystemPrompt();
-    const userPrompt = getUserPrompt(sections);
+    const userPrompt = getUserPrompt(
+      sections,
+      body.originalPrompt,
+      body.adStory,
+      body?.productUrl
+    );
 
     console.log(`\n📤 SENDING ENHANCEMENT REQUEST TO GPT`);
     console.log(`📋 System prompt length: ${systemPrompt.length} characters`);
@@ -576,7 +662,10 @@ export async function POST(request: NextRequest) {
     const parsedResponse = cleanAndParseJSON(responseContent);
     console.log(`✅ Successfully parsed JSON response`);
 
-    const validatedResponse = validateResponse(parsedResponse, sections);
+    const cleanedResponse = cleanExampleUrls(parsedResponse);
+    console.log(`✅ Cleaned example.com URLs`);
+
+    const validatedResponse = validateResponse(cleanedResponse, sections);
     console.log(`✅ Response validation successful`);
 
     // Ensure title is included in the response

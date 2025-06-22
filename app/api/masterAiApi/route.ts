@@ -41,6 +41,17 @@ interface GenerateProductSectionsResponse {
         finalPrice: number;
       };
     };
+    shop_now?: {
+      product: {
+        id: number;
+        title: string;
+        description: string;
+        productUrl: string;
+        imageUrl: string;
+        finalPrice: number;
+        totalRating: number;
+      };
+    };
   };
 }
 
@@ -203,7 +214,7 @@ function convertProductSectionsToModules(
   modulesBySection.push({
     sectionTitle: "Intro Section",
     totalModules: introModules.length,
-    moduleCounts: { TEXT: 2 },
+    moduleCounts: { TEXT: introModules.length },
     modules: introModules,
   });
 
@@ -278,6 +289,35 @@ function convertProductSectionsToModules(
     modules: collectionModules,
   });
 
+  // 4. Add Shop Now Section (if exists)
+  if (productSections.sections.shop_now) {
+    const shopNowModules = [
+      {
+        type: "TEXT",
+        subtype: "SHOP_NOW",
+        content: null,
+        products: [
+          {
+            id: productSections.sections.shop_now.product.id,
+            title: productSections.sections.shop_now.product.title,
+            description: productSections.sections.shop_now.product.description,
+            productUrl: productSections.sections.shop_now.product.productUrl,
+            imageUrl: productSections.sections.shop_now.product.imageUrl,
+            finalPrice: productSections.sections.shop_now.product.finalPrice,
+            totalRating: productSections.sections.shop_now.product.totalRating,
+          },
+        ],
+      },
+    ];
+
+    modulesBySection.push({
+      sectionTitle: "Shop Now",
+      totalModules: shopNowModules.length,
+      moduleCounts: { TEXT: 1 },
+      modules: shopNowModules,
+    });
+  }
+
   return modulesBySection;
 }
 
@@ -296,7 +336,16 @@ function combineSections(
     totalModules: number;
     moduleCounts: Record<string, number>;
     modules: any[];
-  }>
+  }>,
+  mainProduct: {
+    id: number;
+    title: string;
+    description: string;
+    productUrl: string;
+    imageUrl: string;
+    finalPrice: number;
+    totalRating: number;
+  }
 ): Array<{
   sectionTitle: string;
   totalModules: number;
@@ -318,10 +367,62 @@ function combineSections(
     combinedSections.push(introSection);
   }
 
-  // 2. Add all landing page sections in the middle
-  combinedSections.push(...landingPageSections);
+  // 2. Process landing page sections and look for SHOP_NOW module
+  let foundShopNow = false;
+  for (const section of landingPageSections) {
+    // Look for SHOP_NOW module in this section
+    const shopNowModule = section.modules.find(
+      (module) => module.type === "TEXT" && module.subtype === "SHOP_NOW"
+    );
 
-  // 3. Find and add Pair It With section (if exists)
+    if (shopNowModule) {
+      // If found, update it with main product details
+      shopNowModule.content = null;
+      shopNowModule.products = [
+        {
+          id: mainProduct.id,
+          title: mainProduct.title,
+          description: mainProduct.description,
+          productUrl: mainProduct.productUrl,
+          imageUrl: mainProduct.imageUrl,
+          finalPrice: mainProduct.finalPrice,
+          totalRating: mainProduct.totalRating,
+        },
+      ];
+      foundShopNow = true;
+    }
+    combinedSections.push(section);
+  }
+
+  // 3. If no SHOP_NOW module was found in landing page sections, create a new one
+  if (!foundShopNow) {
+    const shopNowSection = {
+      sectionTitle: "Shop Now",
+      totalModules: 1,
+      moduleCounts: { TEXT: 1 },
+      modules: [
+        {
+          type: "TEXT",
+          subtype: "SHOP_NOW",
+          content: null,
+          products: [
+            {
+              id: mainProduct.id,
+              title: mainProduct.title,
+              description: mainProduct.description,
+              productUrl: mainProduct.productUrl,
+              imageUrl: mainProduct.imageUrl,
+              finalPrice: mainProduct.finalPrice,
+              totalRating: mainProduct.totalRating,
+            },
+          ],
+        },
+      ],
+    };
+    combinedSections.push(shopNowSection);
+  }
+
+  // 4. Find and add Pair It With section (if exists)
   const pairItWithSection = productSectionModules.find(
     (section) => section.sectionTitle === "Pair It With"
   );
@@ -329,7 +430,7 @@ function combineSections(
     combinedSections.push(pairItWithSection);
   }
 
-  // 4. Find and add Product Collection section
+  // 5. Find and add Product Collection section
   const collectionSection = productSectionModules.find(
     (section) => section.sectionTitle === "Product Collection"
   );
@@ -350,7 +451,10 @@ async function callEnhanceLandingPage(
     totalModules: number;
     moduleCounts: Record<string, number>;
     modules: any[];
-  }>
+  }>,
+  originalPrompt?: string,
+  adStory?: string,
+  productUrl?: string
 ): Promise<MasterApiResponse | null> {
   try {
     console.log(`🔄 Calling enhance-landing-page API`);
@@ -367,6 +471,9 @@ async function callEnhanceLandingPage(
         body: JSON.stringify({
           title,
           sections,
+          originalPrompt: originalPrompt,
+          adStory: adStory,
+          productUrl,
         }),
       }
     );
@@ -388,16 +495,9 @@ async function callEnhanceLandingPage(
  * Main API handler
  */
 export async function POST(request: NextRequest) {
-  console.log(
-    `\n🚀 ========== MASTER PRODUCT LANDING PAGE API STARTED ==========`
-  );
-  console.log(`⏰ Request started at: ${new Date().toISOString()}`);
-
   try {
-    const body: MasterApiRequest = await request.json();
-    const { productUrl, prompt, adStory } = body;
-
-    console.log(`📥 Request body:`, body);
+    // Step 1: Get product URL from request
+    const { productUrl, prompt, adStory } = await request.json();
 
     if (!productUrl) {
       return NextResponse.json(
@@ -406,19 +506,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔗 Processing Product URL: ${productUrl}`);
-    if (prompt) {
-      console.log(`💡 Additional prompt: ${prompt}`);
-    }
+    console.log(`\n🔄 ========== STARTING MASTER API ==========`);
+    console.log(`📦 Processing product URL: ${productUrl}`);
 
-    // Step 1: Call ProductMappingSections API
-    console.log(`\n📞 ========== CALLING PRODUCT SECTIONS API ==========`);
+    // Step 2: Call product sections API
+    console.log(`\n🔄 ========== GENERATING PRODUCT SECTIONS ==========`);
     const productSectionsResponse = await callGenerateProductSections(
       productUrl,
       prompt
     );
 
-    if (!productSectionsResponse || !productSectionsResponse.success) {
+    if (!productSectionsResponse) {
       return NextResponse.json(
         { error: "Failed to generate product sections" },
         { status: 500 }
@@ -427,27 +525,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Product sections generated successfully`);
     console.log(
-      `📋 Main product: ${productSectionsResponse.mainProduct.title}`
-    );
-    console.log(
-      `📦 Sections generated: intro, collection${
-        productSectionsResponse.sections.pair_it_with ? ", pair_it_with" : ""
+      `📊 Total sections: ${
+        Object.keys(productSectionsResponse.sections).length
       }`
     );
 
-    // Step 2: Convert product sections data to landing page prompt using prompt function
-    console.log(`\n🔄 ========== CONVERTING TO LANDING PAGE PROMPT ==========`);
-    const landingPagePrompt = convertProductSectionsToPrompt(
-      productSectionsResponse,
+    // Step 3: Generate landing page prompt and call create-landing-page API
+    console.log(`\n🔄 ========== GENERATING LANDING PAGE ==========`);
+    const landingPagePrompt = getMasterLandingPagePrompt(
+      productSectionsResponse.mainProduct,
+      productSectionsResponse.sections,
       prompt,
       adStory
     );
-    console.log(
-      `📝 Generated prompt length: ${landingPagePrompt.length} characters`
-    );
 
-    // Step 3: Call create-landing-page API
-    console.log(`\n📞 ========== CALLING LANDING PAGE API ==========`);
+    console.log(`✅ Landing page prompt generated`);
+    console.log(`📋 Prompt length: ${landingPagePrompt.length} characters`);
+
     const landingPageResponse = await callCreateLandingPage(
       productUrl,
       landingPagePrompt
@@ -481,7 +575,8 @@ export async function POST(request: NextRequest) {
     console.log(`\n🔗 ========== COMBINING ALL SECTIONS ==========`);
     const combinedSections = combineSections(
       productSectionModules,
-      landingPageResponse.modulesBySection
+      landingPageResponse.modulesBySection,
+      productSectionsResponse.mainProduct
     );
 
     console.log(`✅ Combined sections successfully`);
@@ -491,7 +586,10 @@ export async function POST(request: NextRequest) {
     console.log(`\n🔄 ========== ENHANCING LANDING PAGE ==========`);
     const enhancedResponse = await callEnhanceLandingPage(
       landingPageResponse.title,
-      combinedSections
+      combinedSections,
+      prompt,
+      adStory,
+      productUrl
     );
 
     if (!enhancedResponse) {
@@ -509,108 +607,12 @@ export async function POST(request: NextRequest) {
 
     // Step 7: Return enhanced response
     console.log(`\n🎉 ========== MASTER API COMPLETED SUCCESSFULLY ==========`);
-    console.log(`📊 Final Response Summary:`);
-    console.log(`   📋 Product: ${productSectionsResponse.mainProduct.title}`);
-    console.log(`   📋 Page Title: ${enhancedResponse.title}`);
-    console.log(`   📦 Product Sections: ${productSectionModules.length}`);
-    console.log(
-      `   📦 Landing Page Sections: ${landingPageResponse.modulesBySection.length}`
-    );
-    console.log(`   📦 Enhanced Sections: ${enhancedResponse.sections.length}`);
-    console.log(`   📦 Enhanced Sections: ${JSON.stringify(enhancedResponse)}`);
-
-    console.log(`⏰ Request completed at: ${new Date().toISOString()}`);
-
-    // Process response to replace example.com URLs with null
-    const processResponse = (sections: any[]) => {
-      console.log("Processing sections:", JSON.stringify(sections, null, 2));
-
-      const checkAndReplaceUrl = (url: string | null) => {
-        if (
-          url &&
-          (url.includes("example.com") || url.includes("example.co"))
-        ) {
-          console.log("Found example URL, replacing:", url);
-          return null;
-        }
-        return url;
-      };
-
-      return sections.map((section) => {
-        if (section.modules) {
-          section.modules = section.modules.map((module: any) => {
-            console.log("Processing module:", module.type);
-
-            if (module.type === "MEDIA" && module.mediaList) {
-              console.log(
-                "Processing MEDIA module mediaList:",
-                module.mediaList
-              );
-              module.mediaList = module.mediaList.map((media: any) => {
-                // Check both url and link properties
-                media.url = checkAndReplaceUrl(media.url);
-                media.link = checkAndReplaceUrl(media.link);
-                return media;
-              });
-            }
-
-            if (module.type === "LIST" && module.bulletPoints) {
-              console.log(
-                "Processing LIST module bulletPoints:",
-                module.bulletPoints
-              );
-              module.bulletPoints = module.bulletPoints.map((point: any) => {
-                point.icon = checkAndReplaceUrl(point.icon);
-                return point;
-              });
-            }
-
-            // Check for any nested URLs in the module itself
-            if (module.url) {
-              module.url = checkAndReplaceUrl(module.url);
-            }
-            if (module.link) {
-              module.link = checkAndReplaceUrl(module.link);
-            }
-            if (module.imageUrl) {
-              module.imageUrl = checkAndReplaceUrl(module.imageUrl);
-            }
-            if (module.icon) {
-              module.icon = checkAndReplaceUrl(module.icon);
-            }
-
-            return module;
-          });
-        }
-        return section;
-      });
-    };
-
-    // Process the enhanced response
-    console.log(
-      "Original response:",
-      JSON.stringify(enhancedResponse, null, 2)
-    );
-    enhancedResponse.sections = processResponse(enhancedResponse.sections);
-    console.log(
-      "Processed response:",
-      JSON.stringify(enhancedResponse, null, 2)
-    );
 
     return NextResponse.json(enhancedResponse);
   } catch (error) {
-    console.error(`💥 ========== MASTER API FATAL ERROR ==========`);
-    console.error(`❌ Error in master API:`, error);
-    console.error(`⏰ Error occurred at: ${new Date().toISOString()}`);
-
+    console.error("Error in master API:", error);
     return NextResponse.json(
-      {
-        error: "Failed to generate complete landing page",
-        message:
-          process.env.NODE_ENV === "development"
-            ? (error as Error).message
-            : "Internal server error",
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

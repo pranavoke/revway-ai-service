@@ -55,8 +55,8 @@ Focus on these module types:
    - VIDEO: Video content
 
 5. TABLE modules:
-   - TABLE_1: Two-column table
-   - TABLE_2: Three-column table
+   - TABLE_2: Two-column table
+   - TABLE_1: Three-column table
 
 IMPORTANT RULES:
 1. NEVER combine different content types in a single module
@@ -64,7 +64,7 @@ IMPORTANT RULES:
 3. Look for natural breaks in the content and create logical separations
 4. If bullet points have a "Title: Supporting text" structure, use BULLET_POINTS_WITH_SUPPORTING_TEXT
 5. If media is mentioned, create appropriate MEDIA modules (use IMAGE_CAROUSEL for  images)
-6. If structured data is present, use TABLE modules (TABLE_1 for 2 columns, TABLE_2 for 3 columns)
+6. If structured data is present, use TABLE modules (TABLE_2 for 2 columns, TABLE_1 for 3 columns)
 7. Each module should represent ONE type of content only
 8. For testimonials, use the following structure:
 
@@ -176,12 +176,12 @@ CORRECT way to structure (properly segregated):
 
 {
   "type": "TABLE",
-  "subtype": "TABLE_1",
+  "subtype": "TABLE_2",
   "table": [["Feature", "Value"], ["Color", "Red"]]
 },
 {
   "type": "TABLE",
-  "subtype": "TABLE_2",
+  "subtype": "TABLE_1",
   "table": [["Feature", "Value", "Notes"], ["Color", "Red", "Popular"]]
 }
 ]

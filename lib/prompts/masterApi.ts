@@ -1,10 +1,3 @@
-// lib/prompts/masterApi.ts
-/**
- * Prompt functions for Master API
- * These prompts handle the orchestration and combination of different API responses
- * ALL PROMPTS ARE EXTRACTED AS-IS FROM ORIGINAL CODE WITHOUT MODIFICATIONS
- */
-
 interface MainProduct {
   id: number;
   title: string;
@@ -41,6 +34,17 @@ interface ProductSections {
       productUrl: string;
       imageUrl: string;
       finalPrice: number;
+    };
+  };
+  shop_now?: {
+    product: {
+      id: number;
+      title: string;
+      description: string;
+      productUrl: string;
+      imageUrl: string;
+      finalPrice: number;
+      totalRating: number;
     };
   };
 }
@@ -99,6 +103,17 @@ export function getMasterLandingPagePrompt(
      Header: ${sections.pair_it_with.header}
      Content: ${sections.pair_it_with.text}
      Recommended Product: ${sections.pair_it_with.product.title} (₹${sections.pair_it_with.product.finalPrice})`;
+  }
+
+  if (sections.shop_now) {
+    prompt += `
+  
+  4. SHOP NOW SECTION:
+     Product: ${sections.shop_now.product.title}
+     Description: ${sections.shop_now.product.description}
+     Price: ₹${sections.shop_now.product.finalPrice}
+     Rating: ${sections.shop_now.product.totalRating}
+     URL: ${sections.shop_now.product.productUrl}`;
   }
 
   prompt += `

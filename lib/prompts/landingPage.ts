@@ -143,8 +143,8 @@ export function getModuleCreationPrompts(data: ModuleCreationData): {
        - VIDEO: Video content
     
     5. TABLE modules (use 'table' field):
-       - TABLE_1: Two-column table
-       - TABLE_2: Three-column table
+       - TABLE_1: Three-column table
+       - TABLE_2: Two-column table
     
        CRITICAL FIELD MAPPINGS:
     - TEXT type → uses 'content' field 
@@ -176,8 +176,9 @@ export function getModuleCreationPrompts(data: ModuleCreationData): {
     4. If description is a string, create a PARAGRAPH module
     5. If description is an array, create appropriate LIST modules
     6. For testimonials, extract individual reviews into a single TESTIMONIAL_1 module with the above structure
-    7. For tables, use TABLE_1 for 2 columns, TABLE_2 for 3 columns (check the number of columns in the data)
+    7. For tables, use TABLE_1 for 3 columns, TABLE_2 for 2 columns (check the number of columns in the data)
     8. For media, use IMAGE_CAROUSEL if more than one image, otherwise IMAGE. For video, use VIDEO.
+    9. I want you to add SHOP_NOW module in one section where you feel like is most apt .
     
     Response format must be: {"modules": [...]}`,
     userPrompt: `Section Title: ${data.sectionTitle}
@@ -193,8 +194,8 @@ export function getModuleCreationPrompts(data: ModuleCreationData): {
 json
 {
   "type": "TEXT",
-  "subtype": "HEADER" | "SUB_HEADER" | "PARAGRAPH" | "PAIR_IT_WITH" | "GRID",
-  "content": "string content here" // null for PAIR_IT_WITH and GRID subtypes
+  "subtype": "HEADER" | "SUB_HEADER" | "PARAGRAPH" | "PAIR_IT_WITH" | "GRID" | "SHOP_NOW",
+  "content": "string content here" // null for PAIR_IT_WITH , SHOP_NOW and GRID subtypes
 }
 When subtype is PAIR_IT_WITH or GRID, add:
 json

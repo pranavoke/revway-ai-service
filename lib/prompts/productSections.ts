@@ -64,7 +64,7 @@ export function getProductIntroSectionPrompt(data: ProductIntroPromptData): {
         
         Generate:
         1. A compelling page header (5-8 words)
-        2. An engaging paragraph that highlights the key benefits
+        2. An engaging paragraph that highlights the key benefits between 15-20 words strictly
         
         Return the response as a pure JSON object without any markdown formatting:
         {

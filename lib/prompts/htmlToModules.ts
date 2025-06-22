@@ -59,8 +59,8 @@ export function getHtmlToModulesClassificationPrompt(data: HtmlToModulesData): {
   
   TABLE Modules
   
-  TABLE_1: Two-column table
-  TABLE_2: Three-column table
+  TABLE_2: Two-column table
+  TABLE_1: Three-column table
   
   
   Your Task
@@ -139,7 +139,7 @@ json
 json
 {
   "type": "TABLE",
-  "subtype": "TABLE_1 -- for 2 col table" | "TABLE_2 -- for >3 col table",
+  "subtype": "TABLE_2 -- for 2 col table" | "TABLE_1 -- for >3 col table",
   "table": {
     "headers": ["Column 1", "Column 2"],
     "rows": [["Row 1 Col 1", "Row 1 Col 2"]]

@@ -74,8 +74,8 @@ function normalizeGPTResponse(
         const colCount = Array.isArray(module.table[0])
           ? module.table[0].length
           : 0;
-        if (colCount === 2) module.subtype = "TABLE_1";
-        if (colCount === 3) module.subtype = "TABLE_2";
+        if (colCount === 3) module.subtype = "TABLE_1";
+        if (colCount === 2) module.subtype = "TABLE_2";
       }
     }
     if (module.type === "MEDIA") {
