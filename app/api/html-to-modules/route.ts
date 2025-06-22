@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
         // Process each section to fix image URLs
         const processedSection = {
           ...section!,
-          sectionTitle: key,
+          sectionTitle: section!.sectionTitle,
           modules: section!.modules.map((module: any) => {
             // If module has mediaList, fix the URLs
             if (module.type === "MEDIA" && module.mediaList) {
@@ -225,7 +225,7 @@ async function processSections(
 
           // Convert to Master API format
           result[sectionKey] = {
-            sectionTitle: sectionKey,
+            sectionTitle: processedSection.sectionTitle,
             modules: processedSection.modules,
           };
           console.log(`Successfully processed section: ${sectionKey}`);
@@ -279,60 +279,70 @@ async function autoDiscoverSections(
     const sectionId = sectionElement.attr("id");
 
     if (sectionId) {
-      try {
-        console.log(`\nProcessing section ${i + 1}/${sections.length}`);
-        console.log(`Section ID: ${sectionId}`);
+      // Check if sectionId contains any of the allowed section types
+      if (
+        sectionId.includes("faq-section") ||
+        sectionId.includes("usage-section") ||
+        sectionId.includes("ingredients-grid") ||
+        sectionId.includes("image-with-accordion")
+      ) {
+        try {
+          console.log(`\nProcessing section ${i + 1}/${sections.length}`);
+          console.log(`Section ID: ${sectionId}`);
 
-        // Get the HTML content for this section
-        const sectionHtml = sectionElement.html();
+          // Get the HTML content for this section
+          const sectionHtml = sectionElement.html();
 
-        if (sectionHtml) {
-          // Extract a section name from comments or classes if available
-          let sectionName = sectionId;
+          if (sectionHtml) {
+            // Extract a section name from comments or classes if available
+            let sectionName = sectionId;
 
-          // Try to extract section name from HTML comments (Shopify often includes descriptive comments)
-          const commentMatch = sectionHtml.match(
-            /<!--\s*(section\/[^>]+)\s*-->/
-          );
-          if (commentMatch && commentMatch[1]) {
-            sectionName = commentMatch[1].trim();
-            console.log(`Found section name in comments: ${sectionName}`);
-          } else {
-            // Try to extract a meaningful name from classes
-            const classList = sectionElement
-              .find('[class*="product-"], [class*="section-"]')
-              .first()
-              .attr("class");
-            if (classList) {
-              const classMatch = classList.match(
-                /(product-[a-z-]+|section-[a-z-]+)/
-              );
-              if (classMatch && classMatch[1]) {
-                sectionName = classMatch[1];
-                console.log(`Found section name in classes: ${sectionName}`);
+            // Try to extract section name from HTML comments (Shopify often includes descriptive comments)
+            const commentMatch = sectionHtml.match(
+              /<!--\s*(section\/[^>]+)\s*-->/
+            );
+            if (commentMatch && commentMatch[1]) {
+              sectionName = commentMatch[1].trim();
+              console.log(`Found section name in comments: ${sectionName}`);
+            } else {
+              // Try to extract a meaningful name from classes
+              const classList = sectionElement
+                .find('[class*="product-"], [class*="section-"]')
+                .first()
+                .attr("class");
+              if (classList) {
+                const classMatch = classList.match(
+                  /(product-[a-z-]+|section-[a-z-]+)/
+                );
+                if (classMatch && classMatch[1]) {
+                  sectionName = classMatch[1];
+                  console.log(`Found section name in classes: ${sectionName}`);
+                }
               }
             }
+
+            console.log(`Processing section content: ${sectionName}`);
+            console.log(
+              `Section HTML length: ${sectionHtml.length} characters`
+            );
+
+            // Process the HTML through the module classification system
+            console.log("Classifying section into modules...");
+            const processedSection = await classifyIntoModules(sectionHtml);
+
+            result[sectionName] = {
+              sectionTitle: processedSection.sectionTitle,
+              modules: processedSection.modules,
+            };
+            console.log(`Successfully processed section: ${sectionName}`);
+          } else {
+            console.log(
+              `Section found with ID ${sectionId} but it has no HTML content`
+            );
           }
-
-          console.log(`Processing section content: ${sectionName}`);
-          console.log(`Section HTML length: ${sectionHtml.length} characters`);
-
-          // Process the HTML through the module classification system
-          console.log("Classifying section into modules...");
-          const processedSection = await classifyIntoModules(sectionHtml);
-
-          result[sectionName] = {
-            sectionTitle: sectionName,
-            modules: processedSection.modules,
-          };
-          console.log(`Successfully processed section: ${sectionName}`);
-        } else {
-          console.log(
-            `Section found with ID ${sectionId} but it has no HTML content`
-          );
+        } catch (error) {
+          console.error(`Error processing section ${sectionId}:`, error);
         }
-      } catch (error) {
-        console.error(`Error processing section ${sectionId}:`, error);
       }
     }
   }

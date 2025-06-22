@@ -131,6 +131,7 @@ json
   
   Return JSON with the following structure:
 {
+  "sectionTitle": "string",
   "modules": [modules_array]
 }
   
