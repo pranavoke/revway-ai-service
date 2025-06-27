@@ -38,18 +38,13 @@ An ad story : ${adStory}
 I have already defined 5 sections for the landing page:
 
 Intro
-
-Why Customers Love Us – includes 10 testimonials
-
+Why Customers Love Us – this section includes 10 testimonials
 Shop Now – a product highlight and CTA
-
 Pair It With – a complementary product with a reason they go well together
-
 Collections – showcase of 4 related products users may also like
 
-Based on the ad story, identify 3 key landing page sections that would best support and expand on it.
+Based on the ad story, identify 3 key *New* landing page sections that would best support and expand on currently added sections.
 For each section, define:
-
 Purpose – What role this section plays in the landing page
 Content Focus – What type of content is best suited for this section
 Theme – The specific idea, promise, or message from the ad this section is based on

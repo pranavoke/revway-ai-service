@@ -256,7 +256,7 @@ Contain Header in every section Compulsory.
 - **Ad Story**: ${JSON.stringify(adStory)}
 - **Available Icons** ICON_LIBRARY: ${JSON.stringify(ICON_LIBRARY)}
 
-First, create a compelling SEO-friendly title (6-10 words) that : 
+First, create a compelling SEO-friendly title (10-12 words) that : 
 It must be directly connected to the ad story .
 It must be Attention grabbing and very impactful .
 It must be specific if possible and not generic .
