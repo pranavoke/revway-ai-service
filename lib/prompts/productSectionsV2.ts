@@ -19,6 +19,7 @@ interface ProductIntroPromptData {
   productTitle: string;
   productDescription: string;
   additionalPrompt?: string;
+  adStory?: string;
 }
 
 interface PairItWithPromptData {
@@ -81,6 +82,7 @@ export function getProductIntroSectionPrompt(data: ProductIntroPromptData): {
     }".
             
             Product Description: ${data.productDescription}
+            ${data.adStory ? `Ad Story/Theme: ${data.adStory}` : ""}
             ${
               data.additionalPrompt
                 ? `Additional Context: ${data.additionalPrompt}`
@@ -88,13 +90,15 @@ export function getProductIntroSectionPrompt(data: ProductIntroPromptData): {
             }
             
             Generate:
-            1. A compelling page header (5-8 words)
-            2. An engaging paragraph that highlights the key benefits between 15-20 words strictly
+            1. A compelling page header (5-8 words) that aligns with the ad story theme
+            2. An engaging one liner (10-15 words strictly) that highlights the key benefits and resonates with the ad story
+            3. A punchy call-to-action text (2-4 words) that compels users to buy and matches the ad story theme
             
             Return the response as a pure JSON object without any markdown formatting:
             {
               "header": "Your header here",
-              "paragraph": "Your paragraph here"
+              "paragraph": "Your paragraph here",
+              "ctaText": "Your CTA text here"
             }`,
   };
 }
@@ -128,7 +132,7 @@ export function getProductPairItWithSectionPrompt(data: PairItWithPromptData): {
               
               Generate:
               1. A punchy, eye-catching header (4-6 words)
-              2. Short persuasive text (2-3 sentences) explaining the combined benefits
+              2. Short persuasive text between 15-20 words strictly explaining the combined benefits
               
               Return the response as a pure JSON object without any markdown formatting:
               {

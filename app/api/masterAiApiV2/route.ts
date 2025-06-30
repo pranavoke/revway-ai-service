@@ -18,6 +18,7 @@ interface GenerateProductSectionsResponse {
     intro: {
       header: string;
       paragraph: string;
+      ctaText: string;
     };
     collection: {
       header: string;
@@ -206,22 +207,52 @@ function convertProductSectionsToModules(
 
   // 1. Convert Intro Section
   const introModules = [
+    // Banner is already being injected by directEnhancedResponse.banner
     {
       type: "TEXT",
       subtype: "HEADER",
       content: productSections.sections.intro.header,
     },
     {
+      type: "MEDIA",
+      subtype: "IMAGE_CAROUSEL",
+      content: {
+        images: [
+          {
+            url: productSections.mainProduct.imageUrl,
+            alt: productSections.mainProduct.title,
+          },
+        ],
+      },
+    },
+    {
       type: "TEXT",
       subtype: "PARAGRAPH",
-      content: productSections.sections.intro.paragraph,
+      content: `🔥20K happy customers\n✅${productSections.sections.intro.paragraph}`,
+    },
+    {
+      type: "TEXT",
+      subtype: "CTA",
+      content: productSections.sections.intro.ctaText || "Shop Now",
+      products: [
+        {
+          id: productSections.mainProduct.id,
+          title: productSections.mainProduct.title,
+          description: productSections.mainProduct.description,
+          productUrl: productSections.mainProduct.productUrl,
+          imageUrl: productSections.mainProduct.imageUrl,
+          finalPrice: productSections.mainProduct.finalPrice,
+          totalRating: productSections.mainProduct.totalRating,
+          sku: productSections.mainProduct.sku,
+        },
+      ],
     },
   ];
 
   modulesBySection.push({
     sectionTitle: "Intro Section",
     totalModules: introModules.length,
-    moduleCounts: { TEXT: introModules.length },
+    moduleCounts: { TEXT: 3, MEDIA: 1 },
     modules: introModules,
   });
 
@@ -724,6 +755,31 @@ export async function POST(request: NextRequest) {
     } else if (directEnhancedResponse?.banner?.content) {
       // Fallback to banner content if no title
       title = `${directEnhancedResponse.banner.content} - ${productSectionsResponse.mainProduct.title}`;
+    }
+
+    // Find the intro section and replace its header with page title
+    if (directEnhancedResponse?.title) {
+      const introSection = cleanedSections.find(
+        (section: {
+          sectionTitle: string;
+          modules: Array<{
+            type: string;
+            subtype: string;
+            content: string;
+          }>;
+        }) => section.sectionTitle.toLowerCase().includes("intro")
+      );
+
+      if (introSection) {
+        const headerModule = introSection.modules.find(
+          (module: { type: string; subtype: string; content: string }) =>
+            module.type === "TEXT" && module.subtype === "HEADER"
+        );
+
+        if (headerModule) {
+          headerModule.content = directEnhancedResponse.title;
+        }
+      }
     }
 
     const response: MasterApiResponse = {
