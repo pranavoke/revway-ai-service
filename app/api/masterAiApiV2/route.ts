@@ -89,7 +89,7 @@ interface DirectEnhancedSectionApiResponse {
   title: string;
   banner?: {
     type: string;
-    subtype: "BANNER";
+    subtype: "BANNER_TEXT";
     content: string;
   };
   sections: Array<{
@@ -213,14 +213,26 @@ function convertProductSectionsToModules(
       subtype: "HEADER",
       content: productSections.sections.intro.header,
     },
+
     {
       type: "MEDIA",
       subtype: "IMAGE_CAROUSEL",
       content: {
-        images: [
+        mediaList: [
           {
-            url: productSections.mainProduct.imageUrl,
-            alt: productSections.mainProduct.title,
+            link: productSections.mainProduct.imageUrl,
+            extension: "jpg",
+            type: "image",
+          },
+          {
+            link: null,
+            extension: null,
+            type: null,
+          },
+          {
+            link: null,
+            extension: null,
+            type: null,
           },
         ],
       },
@@ -228,7 +240,7 @@ function convertProductSectionsToModules(
     {
       type: "TEXT",
       subtype: "PARAGRAPH",
-      content: `🔥20K happy customers\n✅${productSections.sections.intro.paragraph}`,
+      content: `${productSections.mainProduct.title}\n🔥20K happy customers\n✅${productSections.sections.intro.paragraph}`,
     },
     {
       type: "TEXT",
@@ -675,7 +687,7 @@ export async function POST(request: NextRequest) {
 
     let bannerModule: {
       type: string;
-      subtype: "BANNER";
+      subtype: "BANNER_TEXT";
       content: string;
     } | null = null;
 

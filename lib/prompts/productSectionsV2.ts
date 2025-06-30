@@ -91,7 +91,7 @@ export function getProductIntroSectionPrompt(data: ProductIntroPromptData): {
             
             Generate:
             1. A compelling page header (5-8 words) that aligns with the ad story theme
-            2. An engaging one liner (10-15 words strictly) that highlights the key benefits and resonates with the ad story
+            2. An engaging one liner ( 4-6 words strictly) that highlights the key benefits and resonates with the ad story
             3. A punchy call-to-action text (2-4 words) that compels users to buy and matches the ad story theme
             
             Return the response as a pure JSON object without any markdown formatting:
