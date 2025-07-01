@@ -210,7 +210,7 @@ function convertProductSectionsToModules(
     // Banner is already being injected by directEnhancedResponse.banner
     {
       type: "TEXT",
-      subtype: "HEADER",
+      subtype: "PAGE_HEADER",
       content: productSections.sections.intro.header,
     },
 
@@ -572,6 +572,56 @@ function normalizeEnhancedSections(rawArray: any[]): Array<{
 }
 
 /**
+ * Helper function to ensure all CTA modules have a product field with the main product
+ */
+function ensureCtaModulesHaveProduct(
+  sections: Array<{
+    sectionTitle: string;
+    totalModules: number;
+    moduleCounts: Record<string, number>;
+    modules: any[];
+  }>,
+  mainProduct: {
+    id: number;
+    title: string;
+    description: string;
+    productUrl: string;
+    imageUrl: string;
+    finalPrice: number;
+    totalRating: number;
+    sku: string;
+  }
+): void {
+  for (const section of sections) {
+    for (const module of section.modules) {
+      if (module.type === "TEXT" && module.subtype === "CTA") {
+        if (
+          !module.products ||
+          !Array.isArray(module.products) ||
+          module.products.length === 0
+        ) {
+          module.products = [
+            {
+              id: mainProduct.id,
+              title: mainProduct.title,
+              description: mainProduct.description,
+              productUrl: mainProduct.productUrl,
+              imageUrl: mainProduct.imageUrl,
+              finalPrice: mainProduct.finalPrice,
+              totalRating: mainProduct.totalRating,
+              sku: mainProduct.sku,
+            },
+          ];
+          console.log(
+            `✅ Added main product to CTA module in section: ${section.sectionTitle}`
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
  * Main API handler with separate pair flow
  */
 export async function POST(request: NextRequest) {
@@ -793,6 +843,12 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    // Ensure all CTA modules have the main product
+    ensureCtaModulesHaveProduct(
+      cleanedSections,
+      productSectionsResponse.mainProduct
+    );
 
     const response: MasterApiResponse = {
       title,

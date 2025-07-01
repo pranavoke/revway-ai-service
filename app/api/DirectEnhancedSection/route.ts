@@ -287,6 +287,7 @@ The landing page already includes these sections (DO NOT recreate these):
 - **PAIR_IT_WITH & GRID**: "content": null, "products": [product_objects]
 - **SHOP_NOW**: "content": null, "products": [original_product_object]
 - **BANNER**: Short 4-5 word attention-grabbing headline that appears at the very top of the page.
+- **CTA**: A call-to-action content in 2-4 words . 
 
 PARAGRAPH MODULE : Should be crisp and punchy , should be 10-15 words.
 HEADER MODULE : Should be Crisp and very Impactful 3-6 words .
@@ -411,7 +412,7 @@ Do NOT include any module objects outside the sections array.
 
 Generate a captivating page-top banner first, followed by exactly **3 sections** inserted after the intro on the landing page.
 
-CRITICAL: Ensure the total number of sections returned in the sections array is exactly 3. Ensure the banner content fits within 4-5 words.
+CRITICAL(VERY IMPORTANT): Ensure the total number of sections returned in the sections array is exactly 3. Ensure the banner content fits within 4-5 words. Enusre to add media modules in atmost 2 sections and a CTA module in any section where you think it is required but atleast 1 section should have a CTA module .These modules are addtional modules do not combine and shorten the original sections . 
     `;
 
     // Call OpenAI API
