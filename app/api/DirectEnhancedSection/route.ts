@@ -278,7 +278,7 @@ The landing page already includes these sections (DO NOT recreate these):
 
 {
   "type": "TEXT",
-  "subtype": "HEADER"  | "PARAGRAPH" | "PAIR_IT_WITH" | "GRID" | "SHOP_NOW" | "BANNER" | "CTA",
+  "subtype": "HEADER"  | "PARAGRAPH" | "PAIR_IT_WITH" | "GRID" | "SHOP_NOW" | "BANNER_TEXT" | "CTA",
   "content": "string content" // null for PAIR_IT_WITH, GRID, and SHOP_NOW
 }
 
@@ -286,7 +286,7 @@ The landing page already includes these sections (DO NOT recreate these):
 **Special Subtypes:**
 - **PAIR_IT_WITH & GRID**: "content": null, "products": [product_objects]
 - **SHOP_NOW**: "content": null, "products": [original_product_object]
-- **BANNER**: Short 4-5 word attention-grabbing headline that appears at the very top of the page.
+- **BANNER_TEXT**: Short 4-5 word attention-grabbing headline that appears at the very top of the page.
 - **CTA**: A call-to-action content in 2-4 words . 
 
 PARAGRAPH MODULE : Should be crisp and punchy , should be 10-15 words.
@@ -349,7 +349,7 @@ For ICONS YOU SHOULD MUST ADD THE ICONS FROM THE ICON_LIBRARY .
 
 **Limits**: Maximum 10 rows, 2-3 columns (TABLE_1 = 3 columns, TABLE_2 = 2 columns)
 Every column entry should for 2-3 words . 
-Use a 2-column table when the content presents a clear comparison between two ideas — like “Before vs After”, “Problem vs Solution”, or “Without vs With”. Each column should have a heading, with 3–6 aligned points for fast scanning. Ideal for handling objections, showcasing transformation, or comparing brand vs generic.comparision type of sections 
+Use a 2-column table when the content presents a clear comparison between two ideas — like "Before vs After", "Problem vs Solution", or "Without vs With". Each column should have a heading, with 3–6 aligned points for fast scanning. Ideal for handling objections, showcasing transformation, or comparing brand vs generic.comparision type of sections 
 
 Use a 3-column table when content includes three related columns that help users compare, choose, or understand structured information. This can be:
 Comparing three options, plans, or bundles side-by-side (e.g. Basic / Standard / Premium)
@@ -395,7 +395,7 @@ Return data strictly in the following JSON structure **without any extra propert
   "title": "Your SEO-friendly title here",
   "banner": {
     "type": "TEXT",
-    "subtype": "BANNER",
+    "subtype": "BANNER_TEXT",
     "content": "string content"
   },
   "sections": [

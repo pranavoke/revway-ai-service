@@ -34,10 +34,11 @@ export type TextContent =
     };
 
 export type MediaContent = {
-  src: string;
-  alt?: string;
-  thumbnail?: string;
-  title?: string;
+  mediaList: Array<{
+    link: string;
+    extension: string;
+    type: string;
+  }>;
 };
 
 export type BulletPoint = string;
@@ -70,7 +71,12 @@ export type ModuleContent =
 export interface Module {
   type: ModuleType;
   subtype: ModuleSubtype;
-  content: ModuleContent;
+  content?: ModuleContent;
+  mediaList?: Array<{
+    link: string;
+    extension: string;
+    type: string;
+  }>;
 }
 
 export interface LandingPageSection {

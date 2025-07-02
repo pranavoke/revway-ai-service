@@ -14,7 +14,7 @@ type TextSubtype =
   | "SUB_HEADER"
   | "PARAGRAPH"
   | "PAGE_HEADER"
-  | "BANNER";
+  | "BANNER_TEXT";
 
 type MediaSubtype = "VIDEO" | "IMAGE" | "IMAGE_CAROUSEL";
 

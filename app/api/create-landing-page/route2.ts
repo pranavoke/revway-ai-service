@@ -212,10 +212,13 @@ function segmentContent(title: string, content: string): any[] {
         modules.push({
           type: "MEDIA",
           subtype: "IMAGE",
-          content: {
-            src: "https://example.com/images/product-image.jpg",
-            alt: "Product Image",
-          },
+          mediaList: [
+            {
+              link: "https://example.com/image.jpg",
+              extension: "jpg",
+              type: "image",
+            },
+          ],
         });
       }
     }
