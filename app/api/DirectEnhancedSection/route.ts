@@ -247,6 +247,7 @@ You are an expert landing page content creator specializing in conversion-optimi
 Your task is to first generate the Content with reference to the Ad and Section themes provided below and then create a JSON schema by seggregating the content into different modules.
 
 DO NOT ASSUME FACTS , DO NOT MAKE UP ANYTHING , ONLY USE THE PROVIDED INFORMATION .
+ALSO DO NOT DUPLICATE THE CONTENT OF THE EXISTING SECTIONS .
 
 ## SECTION REQUIREMENTS AND THEMES:
 ${JSON.stringify(content)}
