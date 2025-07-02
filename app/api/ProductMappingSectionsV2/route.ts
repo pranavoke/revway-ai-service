@@ -117,7 +117,7 @@ async function fetchBrandProducts(): Promise<Product[]> {
   try {
     console.log("🔄 STEP 1: FETCHING ALL PRODUCTS (MANDATORY)");
     const allProducts: Product[] = [];
-    let currentPage = 1;
+    let currentPage = 0;
     let hasMorePages = true;
     let totalFetched = 0;
 
@@ -125,7 +125,7 @@ async function fetchBrandProducts(): Promise<Product[]> {
       console.log(`📦 Fetching products page ${currentPage}...`);
 
       const response = await fetch(
-        `https://backend.np.revway.io/product/brand/23?page=${currentPage}`,
+        `https://backend.revway.io/product/brand/23?page=${currentPage}`,
         {
           method: "GET",
           headers: {
@@ -151,9 +151,7 @@ async function fetchBrandProducts(): Promise<Product[]> {
         );
         currentPage++;
 
-        if (data.content.length < 20) {
-          hasMorePages = false;
-        }
+        
       } else {
         hasMorePages = false;
       }
