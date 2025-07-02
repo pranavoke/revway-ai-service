@@ -217,23 +217,23 @@ function convertProductSectionsToModules(
     {
       type: "MEDIA",
       subtype: "IMAGE_CAROUSEL",
-      mediaList: [
-        {
-          link: productSections.mainProduct.imageUrl,
-          extension: "jpg",
-          type: "image",
-        },
-        {
-          link: null,
-          extension: null,
-          type: null,
-        },
-        {
-          link: null,
-          extension: null,
-          type: null,
-        },
-      ],
+        mediaList: [
+          {
+            link: productSections.mainProduct.imageUrl,
+            extension: "jpg",
+            type: "image",
+          },
+          {
+            link: null,
+            extension: null,
+            type: null,
+          },
+          {
+            link: null,
+            extension: null,
+            type: null,
+          },
+        ],
     },
     {
       type: "TEXT",
