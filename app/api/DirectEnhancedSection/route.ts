@@ -36,7 +36,7 @@ const ICON_LIBRARY = [
     url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Best%20Seller.png?updatedAt=1749905148909",
   },
   {
-    name: "Lightining",
+    name: "Lightning",
     url: "https://ik.imagekit.io/yoph3tdfu/fwdicons/Lightining.png?updatedAt=1749905148931",
   },
   {
@@ -264,7 +264,7 @@ It must be directly connected to the ad story .
 It must be Attention grabbing and very impactful .
 It must be specific if possible and not generic .
 
-## EXISTING LANDING PAGE STRUCTURE:
+## EXISTING LANDING PAGE SECTIONS:
 The landing page already includes these sections (DO NOT recreate these):
 1. **Intro** - Introduction content
 2. **Why Customers Love Us** - 10 testimonials

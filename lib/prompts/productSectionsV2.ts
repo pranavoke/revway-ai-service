@@ -171,7 +171,7 @@ export function getAIPairProductPrompt(data: AIPairProductData): {
                 : ""
             }
       
-            SELECTION CRITERIA (in priority order):
+            SELECTION CRITERIA:
             1. **Complementary Functionality** - Products that work together (e.g., body wash + lotion, shampoo + conditioner)
             2. **Same Routine/Usage** - Products used in the same context or routine
             3. **Similar Target Audience** - Appeals to the same customer needs
@@ -208,7 +208,7 @@ export function getAIProductCollectionPrompt(data: AICollectionProductData): {
 } {
   return {
     systemPrompt:
-      "You are an expert e-commerce product analyst specializing in creating diverse product collections that appeal to the same customer base. Your goal is to recommend 4 products that offer variety while maintaining customer interest. Always return pure JSON without any markdown code blocks or formatting.",
+      "You are an expert e-commerce product analyst specializing in creating diverse product collections that appeal to the same customer base. Your goal is to recommend a products that offer variety while maintaining customer interest. Always return pure JSON without any markdown code blocks or formatting.",
     userPrompt: `
             Create a diverse "You Might Also Like" collection for the main product.
       
@@ -237,27 +237,15 @@ export function getAIProductCollectionPrompt(data: AICollectionProductData): {
                 : ""
             }
       
-            COLLECTION STRATEGY:
-            1. **Diverse Price Points** - Include products at different price levels
-            2. **Variety of Functions** - Mix of different product types/uses
-            3. **Same Target Audience** - All should appeal to buyers of main product
-            4. **Discovery Factor** - Help customers discover new products
-            5. **Brand Ecosystem** - Create a complete product ecosystem
-            6. **Purchase Timing** - Products they might buy next or separately
+           Include products that are related to the main product and are in the same category. You need to provide minimum 4 products and upon your judgement you can provide more than 4 products but in even numbers.
       
-            SELECTION REQUIREMENTS:
-            - Select EXACTLY 4 products from available list
-            - Ensure variety in product types and price points
             - All products should appeal to the same customer persona
-            - Include both higher and lower priced options
-            - Focus on discovery and cross-category appeal
-            - Avoid direct competitors to the main product
-            - Create a balanced mix that encourages exploration
+          
       
             RESPONSE FORMAT:
             {
-              "collectionProducts": ["url1", "url2", "url3", "url4"],
-              "reasoning": "Brief explanation of the collection strategy and why these 4 products work well together (2-3 sentences)"
+              "collectionProducts": ["url1", "url2", "url3", "url4" ....],
+              "reasoning": "Brief explanation of the collection strategy and why these n products work well together (2-3 sentences)"
             }
             
             CRITICAL: All URLs MUST be exact matches from the available products list above.
@@ -294,6 +282,8 @@ export function getCustomerLoveSectionPrompt(data: CustomerLovePromptData): {
                - Include specific results or experiences
                - Are 15-20 words each
                - Have 5-star ratings
+
+            IMPORTANT: please arrange the testimonials in most relevant order according to the ad story or prompt
             
             Return the response as a pure JSON object without any markdown formatting:
             {
