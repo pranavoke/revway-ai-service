@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
     const DESprompt = `
 
 You are an expert landing page content creator specializing in conversion-optimized, visually engaging sections. Your task is to generate exactly content for 3 unique, high-converting  sections based on the provided product information. For each section the content generated must be directly relevant to the ad story, clearly reflecting its key message and supporting the overall theme.
-Your task is to first generate the Content with reference to the Ad and Section themes provided below and then create a JSON schema by seggregating the content into different modules.
+Your task is to first generate the Content with reference to the AD and SECTION REQUIREMENTS AND THEMES (this is core , generate the content with reference to this) provided below and then create a JSON schema by seggregating the content into different modules.
 
 
  DO NOT DUPLICATE THE CONTENT OF THE EXISTING SECTIONS .
