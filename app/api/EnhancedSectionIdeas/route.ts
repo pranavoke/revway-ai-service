@@ -24,9 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Construct your prompt using the inputs
-    const DESprompt = `
-    
-      I'm building a landing page for a product based on the given product URL.
+    const DESprompt = `I'm building a landing page for a product based on the given product URL.
 You are provided with:
 
 The product URL : ${productUrl}
@@ -37,13 +35,13 @@ An ad story : ${adStory}
 
 I have already defined 5 sections for the landing page:
 
-Intro
-Why Customers Love Us – this section includes 10 testimonials
-Shop Now – a product highlight and CTA
-Pair It With – a complementary product with a reason they go well together
-Collections – showcase of 4 related products users may also like
+Intro section - This section incudes a product picture along with a header that is the header of entire landing page
+Why Customers Love Us – this section includes customer testimonials in sync with the ad story
+Shop Now – CTA for user to buy the product
+Pair It With – CTA for user to buy a complementary product with a reason why to buy in pair
+Collections – Curated collections products in sync with ad story and audience
 
-Based on the ad story, identify 3 key *New* landing page sections that would best support and expand on currently added sections.
+Based on the ad story, identify 3 key *New* landing page sections that would 1) expand on the ad story and continue the ad narrative and 2) do not duplicate the purpose mentioned in the 5 sections already added and 3) the sections to be identified must be highly relevant to the ad story
 For each section, define:
 Purpose – What role this section plays in the landing page
 Content Focus – What type of content is best suited for this section
@@ -62,9 +60,7 @@ Return in JSON format with the following structure :
     },
     ..similarly for other 2 sections
   ]
-}
-
-    `;
+} `;
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
